@@ -1,0 +1,15 @@
+#ifndef PLUGIN_H
+#define PLUGIN_H
+
+#define SCIDB4GEO_VERSION_MAJOR ${scidb4geo_VERSION_MAJOR}
+#define SCIDB4GEO_VERSION_MINOR ${scidb4geo_VERSION_MINOR}
+
+#define SCIDB4GEO_CONFIG_FILE $ENV{HOME}/.scidb4geo/config.ini
+#define SCIDB_MAXDIMINDEX 4611686018427387903
+
+
+#ifndef PROJECT_ROOT // Must be set manually if compiling outside SciDB 
+#define PROJECT_ROOT "${CMAKE_CURRENT_LIST_DIR}"
+#endif
+
+#endif

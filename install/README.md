@@ -1,0 +1,1 @@
+The provided setup script does NOT build the library. It simply performs initializations like creating database schemas in SciDB's system catalog.

@@ -1,0 +1,29 @@
+/*
+scidb4geo - A SciDB plugin for managing spatially referenced arrays
+Copyright (C) 2015 Marius Appel <marius.appel@uni-muenster.de>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-----------------------------------------------------------------------------*/
+
+
+// Inserts a referenced source array into a target array
+eo_insert ( A, B ) = insert ( redimension ( join ( A, eo_over ( A, B ) ), B ), B ); // TODO: Rename attributes an dimensions  x and y
+
+// eo_join(A,B) = redimension(join(A,eo_over(B,A)),B) // Example: eo_join(MOD,TRMM) ->   join(window(join(redimension(join(TRMM,eo_over(TRMM,MOD)), MOD), build(MOD,null)), WINPARS),MOD)
+//
+// distance(x1,y1,x2,y2) = sqrt(sq(x2-x1) + sq(y2-y1)) where
+// {
+//     sq(x) = x * x;
+// };
+
