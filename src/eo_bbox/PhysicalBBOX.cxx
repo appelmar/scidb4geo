@@ -82,7 +82,7 @@ namespace scidb4geo
              cout << "Y: " << dims[ydim_idx].getCurrStart() << "    " << dims[ydim_idx].getStartMin() << "    " << dims[ydim_idx].getCurrEnd() << "    " << dims[ydim_idx].getEndMax() << endl;
              */
 
-            BBOXInfo bbox;
+            EOExtentInfo bbox;
             // apply affine transform
             // TODO: This must be tested: getCurrStart vs getStartMin etc, assert xmin<xmax, ...
             // Is it enough to take only 2 points (xmin,ymin) and (xmax,ymax) or must (xmin,ymax), (xmax,ymin) also be included and aggregated by min afterwards?
