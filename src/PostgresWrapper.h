@@ -118,6 +118,8 @@ namespace scidb4geo
          * Returns spatial reference information for a single array
          */
         SpatialArrayInfo dbGetSpatialRef ( const string &arrayname );
+	
+	SpatialArrayInfo dbGetSpatialRefOrEmpty ( const string &arrayname );
 
         /**
          * Returns spatial reference information for all registered arrays
@@ -158,6 +160,8 @@ namespace scidb4geo
              * Returns temporal reference information for a single array
              */
         TemporalArrayInfo dbGetTemporalRef ( const string &arrayname );
+	
+	TemporalArrayInfo dbGetTemporalRefOrEmpty ( const string &arrayname );
 
         /**
          * Returns temporal reference information for all registered arrays
