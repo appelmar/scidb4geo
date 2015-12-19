@@ -71,7 +71,7 @@ namespace scidb4geo
             for ( uint16_t i = 0; i < _parameters.size(); ++i ) {
                 arrays.push_back ( ArrayDesc::makeUnversionedName ( ( ( boost::shared_ptr<OperatorParamReference> & ) _parameters[i] )->getObjectName() ) );
             }
-
+            
             vector<SpatialArrayInfo> infolist = PostgresWrapper::instance()->dbGetSpatialRef ( arrays );
 
             boost::shared_ptr<TupleArray> tuples ( boost::make_shared<TupleArray> ( _schema, _arena ) );

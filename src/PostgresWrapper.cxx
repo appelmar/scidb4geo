@@ -206,6 +206,18 @@ namespace scidb4geo
     }
 
 
+    SpatialArrayInfo PostgresWrapper::dbGetSpatialRefOrEmpty ( const string &arrayname )
+    {
+        vector<string> in;
+        in.push_back ( arrayname );
+        vector<SpatialArrayInfo> out =  PostgresWrapper::instance()->dbGetSpatialRef ( in ); // must be called via singleton
+        if ( out.size() != 1 ) {
+          SpatialArrayInfo srs;
+	  srs.arrayname = ""; 
+	  out.push_back(srs);
+        }
+        return out[0];
+    }
 
 
     int PostgresWrapper::dbGetSpatialRefCount ( const vector<string> &arraynames )
@@ -373,8 +385,17 @@ namespace scidb4geo
         return out[0];
     }
 
-
-
+     TemporalArrayInfo PostgresWrapper::dbGetTemporalRefOrEmpty ( const string &arrayname ) {
+        vector<string> in;
+        in.push_back ( arrayname );
+        vector<TemporalArrayInfo> out =  PostgresWrapper::instance()->dbGetTemporalRef ( in ); // must be called via singleton
+        if ( out.size() != 1 ) {
+           TemporalArrayInfo trs;
+	   trs.arrayname = "";
+	   return trs;
+        }
+        return out[0];
+     }
 
     int PostgresWrapper::dbGetTemporalRefCount ( const vector<string> &arraynames )
     {

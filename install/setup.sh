@@ -72,10 +72,10 @@ pluginsdir=$(awk -F "=" '/pluginsdir/ {print $2}' $SCIDB_CONFIG)
 
 # Loading hstore extension
 echo -e "Checking Postgres version and try to load hstore extension..."
-PGVERSION="$(PGPASSWORD=${dbpasswd} psql -h localhost -p 5432 -U ${dbuser} -d ${dbname} -t -c 'SHOW server_version_num')" 
+PGVERSION=$(su postgres -c  "psql -d ${dbname} -t -c 'SHOW server_version_num'") 
 if [ "$PGVERSION" -gt "90099" ]; # create extension support as of 9.1
 then
-  PGPASSWORD=${dbpasswd} psql -h localhost -p 5432 -U ${dbuser} -d ${dbname} -c "create extension if not exists hstore" 1> /dev/null
+   su postgres -c "psql -d ${dbname} -c 'create extension if not exists hstore'" 1> /dev/null
 elif [ "$PGVERSION" -lt "80500" ] && [ "$PGVERSION" -gt "80399" ]; # Postgres 8.4
 then
   echo -e "WARNING: To use the hstore extension for storing additional earth-observation metadata, please make sure that the extension is installed and loaded in the system catalog. For that, run /home/share/postgres/8.4/contrib/hstore.sql as a database superuser and rerun this script if table scidb4geo_array_gdalmd cannot be created."
@@ -87,15 +87,34 @@ fi
 
 # Uninstall previous installation
 echo -e "Removing previous installations..."
-PGPASSWORD=${dbpasswd} psql -h localhost -p 5432 -U ${dbuser} -d ${dbname} -f dbuninstall.sql 1> /dev/null
+su postgres -c  "psql -d ${dbname} -f dbuninstall.sql 1> /dev/null"
 
 # Create system catalog tables
 echo -e "Creating schemas..."
-PGPASSWORD=${dbpasswd} psql -h localhost -p 5432 -U ${dbuser} -d ${dbname} -f dbinstall.sql 1> /dev/null 
+su postgres -c  "psql -d ${dbname} -f dbinstall.sql 1> /dev/null"
 
 # Fill spatial_ref_sys table (data can be used from PostGIS)
 echo -e "Inserting EPSG data..."
-PGPASSWORD=${dbpasswd} psql -h localhost -p 5432 -U ${dbuser} -d ${dbname} -f spatial_ref_sys.sql 1> /dev/null
+su postgres -c  "psql -d ${dbname} -f spatial_ref_sys.sql 1> /dev/null"
+
+su postgres -c "psql -d ${dbname} -c 'ALTER TABLE scidb4geo_spatialrefsys OWNER TO scidb' 1> /dev/null"
+su postgres -c "psql -d ${dbname} -c 'ALTER TABLE scidb4geo_array_s OWNER TO scidb' 1> /dev/null"
+su postgres -c "psql -d ${dbname} -c 'ALTER TABLE scidb4geo_array_t OWNER TO scidb' 1> /dev/null"
+su postgres -c "psql -d ${dbname} -c 'ALTER TABLE scidb4geo_array_v OWNER TO scidb' 1> /dev/null"
+su postgres -c "psql -d ${dbname} -c 'ALTER TABLE scidb4geo_array_md OWNER TO scidb' 1> /dev/null"
+su postgres -c "psql -d ${dbname} -c 'ALTER TABLE scidb4geo_attribute_md OWNER TO scidb' 1> /dev/null"
+su postgres -c "psql -d ${dbname} -c 'ALTER FUNCTION scidb4geo_proc_array_rename() OWNER TO scidb' 1> /dev/null"
+su postgres -c "psql -d ${dbname} -c 'ALTER FUNCTION scidb4geo_proc_array_remove() OWNER TO scidb' 1> /dev/null"
+su postgres -c "psql -d ${dbname} -c 'ALTER FUNCTION scidb4geo_proc_dimension_rename() OWNER TO scidb' 1> /dev/null"
+su postgres -c "psql -d ${dbname} -c 'ALTER FUNCTION scidb4geo_proc_dimension_remove() OWNER TO scidb' 1> /dev/null"
+su postgres -c "psql -d ${dbname} -c 'ALTER FUNCTION scidb4geo_proc_attribute_rename() OWNER TO scidb' 1> /dev/null"
+su postgres -c "psql -d ${dbname} -c 'ALTER FUNCTION scidb4geo_proc_attribute_remove() OWNER TO scidb' 1> /dev/null"
+
+
+
+
+
+#su postgres -c "psql -d ${dbname} -c 'REASSIGN OWNED BY postgres TO scidb' 1> /dev/null"
 
 # For binary distribution, copy shared library to pluginsdir
 if [ -f libscidb4geo.so ]; then

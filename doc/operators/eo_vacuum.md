@@ -27,5 +27,7 @@ eo_vacuum()
 
 ###Notes
 
+**THIS METHOD IS NOT YET AVAILABLE**
+
 ###Author(s)
 Marius Appel - <marius.appel@uni-muenster.de>

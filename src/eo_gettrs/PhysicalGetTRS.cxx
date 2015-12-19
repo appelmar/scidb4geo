@@ -91,7 +91,6 @@ namespace scidb4geo
                 tuple[4].setString ( "" );
                 tuple[5].setString ( "" );
 
-
                 ArrayID arrayId = SystemCatalog::getInstance()->findArrayByName ( infolist[i].arrayname );
                 boost::shared_ptr<ArrayDesc> arrayDesc = SystemCatalog::getInstance()->getArrayDesc ( arrayId );
                 Dimensions dims = arrayDesc->getDimensions();
