@@ -44,7 +44,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "system/SystemCatalog.h"
 
 #include "../PostgresWrapper.h"
-
+#include "../Utils.h"
 
 #define SEP ";;;"
 
@@ -97,7 +97,7 @@ namespace scidb4geo
 
                 int curcol = 0;
 
-                Value tuple[5];
+                Value tuple[6];
                 tuple[curcol++].setString ( arrays[i]->getName() );
                 //tuple[1].setString ( info[i].setting );
 
@@ -143,7 +143,8 @@ namespace scidb4geo
                 // GetSRS
                 ss.str ( "" );
                 SpatialArrayInfo srs =  PostgresWrapper::instance()->dbGetSpatialRefOrEmpty ( arrays[i]->getName() );
-                if ( srs.arrayname.compare ( arrays[i]->getName() ) == 0 ) {
+                bool isSpatial = ( srs.arrayname.compare ( arrays[i]->getName() ) == 0 );
+                if ( isSpatial ) {
                     ss << srs.xdim << SEP
                        << srs.ydim << SEP
                        << srs.auth_name << SEP
@@ -159,10 +160,11 @@ namespace scidb4geo
                 }
 
 
-                // GetSRS
+                // GetTRS
                 ss.str ( "" );
                 TemporalArrayInfo trs =  PostgresWrapper::instance()->dbGetTemporalRefOrEmpty ( arrays[i]->getName() );
-                if ( trs.arrayname.compare ( arrays[i]->getName() ) == 0 ) {
+                bool isTemporal = ( trs.arrayname.compare ( arrays[i]->getName() ) == 0 );
+                if ( isTemporal ) {
                     ss << trs.tdim << SEP
                        << trs.tref->getStart().toStringISO() << SEP
                        << trs.tref->getCellsize().toStringISO();
@@ -172,6 +174,83 @@ namespace scidb4geo
                 else {
                     tuple[curcol++].setString ( "" );
                 }
+
+
+
+
+
+
+                // Get Extent
+                stringstream sext;
+                sext << " ";
+                int xdim_idx = -1;
+                int ydim_idx = -1;
+                int tdim_idx = -1;
+                // Add vertical...
+
+                // Find dimensions
+                DimensionDesc d;
+                for ( size_t iD = 0; iD < arrays[i]->getDimensions().size(); ++iD ) {
+                    d = arrays[i]->getDimensions() [iD];
+                    if ( isSpatial ) {
+                        if ( d.getBaseName().compare ( srs.xdim ) == 0 ) xdim_idx = iD;
+                        else if ( d.getBaseName().compare ( srs.ydim ) == 0 ) ydim_idx = iD;
+                    }
+                    if ( isTemporal ) {
+                        if ( d.getBaseName().compare ( trs.tdim ) == 0 ) tdim_idx = iD;
+                    }
+                    // Add vertical...
+                }
+
+
+                /* Array bounds might be unknown und thus equal maximum int64 values.
+                The followoing loop tries to find better values based on dimension settings */
+                for ( size_t iD = 0; iD < arrays[i]->getDimensions().size(); ++iD ) {
+                    if ( abs ( lowBoundary[iD] ) == SCIDB_MAXDIMINDEX ) {
+                        lowBoundary[iD] = arrays[i]->getDimensions() [iD].getCurrStart();
+                        if ( abs ( lowBoundary[iD] ) == SCIDB_MAXDIMINDEX ) lowBoundary[iD] = arrays[i]->getDimensions() [iD].getStartMin();
+                    }
+                    if ( abs ( highBoundary[iD] ) == SCIDB_MAXDIMINDEX ) {
+                        highBoundary[iD] = arrays[i]->getDimensions() [iD].getCurrEnd();
+                        if ( abs ( highBoundary[iD] ) == SCIDB_MAXDIMINDEX ) highBoundary[iD] = arrays[i]->getDimensions() [iD].getEndMax();
+                    }
+                }
+
+
+                if ( isSpatial ) {
+                    AffineTransform::double2 ps1_world = srs.A.f ( AffineTransform::double2 ( lowBoundary[xdim_idx],  lowBoundary[ydim_idx] ) );
+                    AffineTransform::double2 ps2_world = srs.A.f ( AffineTransform::double2 ( lowBoundary[xdim_idx],  highBoundary[ydim_idx] ) );
+                    AffineTransform::double2 ps3_world = srs.A.f ( AffineTransform::double2 ( highBoundary[xdim_idx], lowBoundary[ydim_idx] ) );
+                    AffineTransform::double2 ps4_world = srs.A.f ( AffineTransform::double2 ( highBoundary[xdim_idx], highBoundary[ydim_idx] ) );
+
+                    // Find minimum and maximum of transformed corners
+                    double x[4] = {ps1_world.x, ps2_world.x, ps3_world.x, ps4_world.x};
+                    double y[4] = {ps1_world.y, ps2_world.y, ps3_world.y, ps4_world.y};
+                    AffineTransform::double2 lowleft ( utils::min ( x, 4 ), utils::min ( y, 4 ) );
+                    AffineTransform::double2 upright ( utils::max ( x, 4 ), utils::max ( y, 4 ) );
+                    sext << setprecision ( numeric_limits< double >::digits10 ) << lowleft.x << SEP << upright.x << SEP << lowleft.y << SEP << upright.y << SEP;
+                }
+                else {
+                    sext <<  "0.0"  << SEP <<  "0.0"  << SEP   "0.0"  << SEP   "0.0"  << SEP ;
+                }
+
+                if ( isTemporal ) {
+                    sext <<  trs.tref->datetimeAtIndex ( lowBoundary[tdim_idx] ).toStringISO() << SEP << ( trs.tref->datetimeAtIndex ( highBoundary[tdim_idx] ).toStringISO() ) << SEP;
+                    delete trs.tref;
+
+                }
+                else {
+                    sext <<  ""  << SEP <<  ""  << SEP  ;
+                }
+                // Add vertical...
+
+                tuple[curcol++].setString ( sext.str() );
+
+
+
+
+
+
 
 
                 tuples->appendTuple ( tuple );

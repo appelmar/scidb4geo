@@ -95,14 +95,14 @@ namespace scidb4geo
             // assert ( _parameters.size() == 0 );
 
 
-            Attributes attributes ( 5 );
+            Attributes attributes ( 6 );
             attributes[0] = AttributeDesc ( ( AttributeID ) 0, "name", TID_STRING, 0, 0 );
             attributes[1] = AttributeDesc ( ( AttributeID ) 1, "dimensions", TID_STRING, 0, 0 );
             attributes[2] = AttributeDesc ( ( AttributeID ) 2, "attributes", TID_STRING, 0, 0 );
             attributes[3] = AttributeDesc ( ( AttributeID ) 3, "srs", TID_STRING, 0, 0 );
             attributes[4] = AttributeDesc ( ( AttributeID ) 4, "trs", TID_STRING, 0, 0 );
-
-
+	    attributes[5] = AttributeDesc ( ( AttributeID ) 5, "extent", TID_STRING, 0, 0 );
+	  
             size_t nArrays = _parameters.size();
             if ( nArrays == 0 ) nArrays = ( size_t ) PostgresWrapper::instance()->dbGetArrayCount();
 

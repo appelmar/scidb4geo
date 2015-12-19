@@ -34,7 +34,7 @@ namespace scidb4geo
     {
 
 
-        double min ( const double *v, const size_t &n )
+        inline double min ( const double *v, const size_t &n )
         {
             if ( n == 0 ) return NAN;
             double m = v[0];
@@ -44,7 +44,7 @@ namespace scidb4geo
             return m;
         }
 
-        double max ( const double *v, const size_t &n )
+        inline double max ( const double *v, const size_t &n )
         {
             if ( n == 0 ) return NAN;
             double m = v[0];
