@@ -17,9 +17,9 @@ along with SciDB.  If not, see <http://www.gnu.org/licenses/agpl-3.0.html>
 -----------------------------------------------------------------------------
 Modification date: (2015-08-01)
 
-Modifications are copyright (C) 2015 Marius Appel <marius.appel@uni-muenster.de>
+Modifications are copyright (C) 2016 Marius Appel <marius.appel@uni-muenster.de>
 
-scidb4geo - A SciDB plugin for managing spatially referenced arrays
+scidb4geo - A SciDB plugin for managing spacetime earth-observation arrays
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published by
@@ -63,42 +63,50 @@ namespace scidb4geo
             PhysicalOperator ( logicalName, physicalName, parameters, schema ) {
         }
 
-        virtual ArrayDistribution getOutputDistribution ( const std::vector<ArrayDistribution> &inputDistributions,
+        virtual RedistributeContext getOutputDistribution ( const std::vector<RedistributeContext> &inputDistributions,
                 const std::vector< ArrayDesc> &inputSchemas ) const {
-            return ArrayDistribution ( psLocalInstance );
+            return RedistributeContext ( psLocalInstance );
         }
 
-        void preSingleExecute ( boost::shared_ptr<Query> query ) {
+        void preSingleExecute ( std::shared_ptr<Query> query ) {
 
 
 
-            vector<boost::shared_ptr<ArrayDesc> > arrays;
+            vector<ArrayDesc > arrays;
             //SystemCatalog::getInstance()->
             for ( uint16_t i = 0; i < _parameters.size(); ++i ) {
 
-                ArrayID id = SystemCatalog::getInstance()->findArrayByName ( ( ( boost::shared_ptr<OperatorParamReference> & ) _parameters[i] )->getObjectName() );
-                arrays.push_back ( SystemCatalog::getInstance()->getArrayDesc ( id ) );
+	       string _arrayName = ( ( std::shared_ptr<OperatorParamReference> & ) _parameters[i] )->getObjectName() ;
+	      ArrayDesc arrayDesc;
+	    SystemCatalog::getInstance()->getArrayDesc(_arrayName , query->getCatalogVersion(_arrayName ), LAST_VERSION, arrayDesc);
+// 	       ArrayDesc arrayDesc;
+// 	       string _arrayName = ( ( std::shared_ptr<OperatorParamReference> & ) _parameters[i] )->getObjectName() ;
+// 	       SystemCatalog::getInstance()->getArrayDesc(_arrayName, query->getCatalogVersion(_arrayName), LAST_VERSION, arrayDesc);
+	       arrays.push_back ( arrayDesc );
+	      
+//                 ArrayID id = SystemCatalog::getInstance()->findArrayByName ( ( ( std::shared_ptr<OperatorParamReference> & ) _parameters[i] )->getObjectName() );
+//                 arrays.push_back ( SystemCatalog::getInstance()->getArrayDesc ( id ) );
             }
 
 
             if ( _parameters.empty() ) { // If no array is given, fetch all referenced arrays
                 vector<EOArrayInfo> info =  PostgresWrapper::instance()->dbGetArrays();
                 for ( uint16_t i = 0; i < info.size(); ++i ) {
-
-                    ArrayID id = SystemCatalog::getInstance()->findArrayByName ( info[i].arrayname );
-                    arrays.push_back ( SystemCatalog::getInstance()->getArrayDesc ( id ) );
+		    ArrayDesc arrayDesc;
+		    SystemCatalog::getInstance()->getArrayDesc(info[i].arrayname , query->getCatalogVersion(info[i].arrayname ), LAST_VERSION, arrayDesc); 
+                    arrays.push_back ( arrayDesc );
                 }
             }
 
 
 
-            boost::shared_ptr<TupleArray> tuples ( boost::make_shared<TupleArray> ( _schema, _arena ) );
+            std::shared_ptr<TupleArray> tuples ( std::make_shared<TupleArray> ( _schema, _arena ) );
             for ( size_t i = 0; i < arrays.size(); ++i ) {
 
                 int curcol = 0;
 
                 Value tuple[6];
-                tuple[curcol++].setString ( arrays[i]->getName() );
+                tuple[curcol++].setString ( arrays[i].getName() );
                 //tuple[1].setString ( info[i].setting );
 
                 //ArrayDesc desc;
@@ -106,15 +114,15 @@ namespace scidb4geo
                 //arrays[i] =
                 //SystemCatalog::getInstance()->getArrayDesc (arrays[i].getName(), arrays[i] ); // Overwrite current array MD with complete MD
                 //ArrayId id = SystemCatalog::getInstance()->findArrayByName(arrays[i].getName());
-                Coordinates lowBoundary = SystemCatalog::getInstance()->getLowBoundary ( arrays[i]->getId() );
-                Coordinates highBoundary = SystemCatalog::getInstance()->getHighBoundary ( arrays[i]->getId() );
+                Coordinates lowBoundary = SystemCatalog::getInstance()->getLowBoundary ( arrays[i].getId() );
+                Coordinates highBoundary = SystemCatalog::getInstance()->getHighBoundary ( arrays[i].getId() );
 
                 stringstream ss;
 
 
                 // Get Dimensions
-                for ( size_t iD = 0; iD < arrays[i]->getDimensions().size(); ++iD ) {
-                    DimensionDesc d = arrays[i]->getDimensions() [iD];
+                for ( size_t iD = 0; iD < arrays[i].getDimensions().size(); ++iD ) {
+                    DimensionDesc d = arrays[i].getDimensions() [iD];
 
                     ss << "[" << d.getBaseName() << SEP
                        << d.getStartMin() << SEP
@@ -131,7 +139,7 @@ namespace scidb4geo
 
 
                 // Get Attributes
-                Attributes A = arrays[i]->getAttributes ( true );
+                Attributes A = arrays[i].getAttributes ( true );
                 for ( size_t iA = 0; iA < A.size(); ++iA ) {
                     ss << "<" << A[iA].getName() << SEP
                        << A[iA].getType() << SEP
@@ -142,8 +150,8 @@ namespace scidb4geo
 
                 // GetSRS
                 ss.str ( "" );
-                SpatialArrayInfo srs =  PostgresWrapper::instance()->dbGetSpatialRefOrEmpty ( arrays[i]->getName() );
-                bool isSpatial = ( srs.arrayname.compare ( arrays[i]->getName() ) == 0 );
+                SpatialArrayInfo srs =  PostgresWrapper::instance()->dbGetSpatialRefOrEmpty ( arrays[i].getName() );
+                bool isSpatial = ( srs.arrayname.compare ( arrays[i].getName() ) == 0 );
                 if ( isSpatial ) {
                     ss << srs.xdim << SEP
                        << srs.ydim << SEP
@@ -162,8 +170,8 @@ namespace scidb4geo
 
                 // GetTRS
                 ss.str ( "" );
-                TemporalArrayInfo trs =  PostgresWrapper::instance()->dbGetTemporalRefOrEmpty ( arrays[i]->getName() );
-                bool isTemporal = ( trs.arrayname.compare ( arrays[i]->getName() ) == 0 );
+                TemporalArrayInfo trs =  PostgresWrapper::instance()->dbGetTemporalRefOrEmpty ( arrays[i].getName() );
+                bool isTemporal = ( trs.arrayname.compare ( arrays[i].getName() ) == 0 );
                 if ( isTemporal ) {
                     ss << trs.tdim << SEP
                        << trs.tref->getStart().toStringISO() << SEP
@@ -190,8 +198,8 @@ namespace scidb4geo
 
                 // Find dimensions
                 DimensionDesc d;
-                for ( size_t iD = 0; iD < arrays[i]->getDimensions().size(); ++iD ) {
-                    d = arrays[i]->getDimensions() [iD];
+                for ( size_t iD = 0; iD < arrays[i].getDimensions().size(); ++iD ) {
+                    d = arrays[i].getDimensions() [iD];
                     if ( isSpatial ) {
                         if ( d.getBaseName().compare ( srs.xdim ) == 0 ) xdim_idx = iD;
                         else if ( d.getBaseName().compare ( srs.ydim ) == 0 ) ydim_idx = iD;
@@ -205,14 +213,14 @@ namespace scidb4geo
 
                 /* Array bounds might be unknown und thus equal maximum int64 values.
                 The followoing loop tries to find better values based on dimension settings */
-                for ( size_t iD = 0; iD < arrays[i]->getDimensions().size(); ++iD ) {
+                for ( size_t iD = 0; iD < arrays[i].getDimensions().size(); ++iD ) {
                     if ( abs ( lowBoundary[iD] ) == SCIDB_MAXDIMINDEX ) {
-                        lowBoundary[iD] = arrays[i]->getDimensions() [iD].getCurrStart();
-                        if ( abs ( lowBoundary[iD] ) == SCIDB_MAXDIMINDEX ) lowBoundary[iD] = arrays[i]->getDimensions() [iD].getStartMin();
+                        lowBoundary[iD] = arrays[i].getDimensions() [iD].getCurrStart();
+                        if ( abs ( lowBoundary[iD] ) == SCIDB_MAXDIMINDEX ) lowBoundary[iD] = arrays[i].getDimensions() [iD].getStartMin();
                     }
                     if ( abs ( highBoundary[iD] ) == SCIDB_MAXDIMINDEX ) {
-                        highBoundary[iD] = arrays[i]->getDimensions() [iD].getCurrEnd();
-                        if ( abs ( highBoundary[iD] ) == SCIDB_MAXDIMINDEX ) highBoundary[iD] = arrays[i]->getDimensions() [iD].getEndMax();
+                        highBoundary[iD] = arrays[i].getDimensions() [iD].getCurrEnd();
+                        if ( abs ( highBoundary[iD] ) == SCIDB_MAXDIMINDEX ) highBoundary[iD] = arrays[i].getDimensions() [iD].getEndMax();
                     }
                 }
 
@@ -261,16 +269,16 @@ namespace scidb4geo
 
         }
 
-        boost::shared_ptr<Array> execute ( vector< boost::shared_ptr<Array> > &inputArrays, boost::shared_ptr<Query> query ) {
+        std::shared_ptr<Array> execute ( vector< std::shared_ptr<Array> > &inputArrays, std::shared_ptr<Query> query ) {
 
             if ( !_result ) {
-                _result = boost::make_shared<MemArray> ( _schema, query );
+                _result = std::make_shared<MemArray> ( _schema, query );
             }
             return _result;
         }
 
     private:
-        boost::shared_ptr<Array> _result;
+        std::shared_ptr<Array> _result;
     };
 
     REGISTER_PHYSICAL_OPERATOR_FACTORY ( PhysicalAll, "eo_all", "PhysicalAll" );

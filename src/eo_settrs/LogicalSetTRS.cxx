@@ -17,9 +17,9 @@ along with SciDB.  If not, see <http://www.gnu.org/licenses/agpl-3.0.html>
 -----------------------------------------------------------------------------
 Modification date: (2015-08-01)
 
-Modifications are copyright (C) 2015 Marius Appel <marius.appel@uni-muenster.de>
+Modifications are copyright (C) 2016 Marius Appel <marius.appel@uni-muenster.de>
 
-scidb4geo - A SciDB plugin for managing spatially referenced arrays
+scidb4geo - A SciDB plugin for managing spacetime earth-observation arrays
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published by
@@ -100,7 +100,7 @@ namespace scidb4geo
 
 
 
-        ArrayDesc inferSchema ( std::vector<ArrayDesc> schemas, boost::shared_ptr<Query> query ) {
+        ArrayDesc inferSchema ( std::vector<ArrayDesc> schemas, std::shared_ptr<Query> query ) {
             assert ( schemas.size() == 0 );
             assert ( _parameters.size() == 4 );
             assert ( _parameters[0]->getParamType() == PARAM_ARRAY_REF );

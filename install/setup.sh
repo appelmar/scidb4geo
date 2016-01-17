@@ -29,7 +29,7 @@ fi
 
 
 echo -e "-----------------"
-echo -e "Installation script for installing scidb4geo plugin from binaries. This script must run under scidb user."
+echo -e "Installation script for installing scidb4geo plugin from binaries. This script must run as root user."
 echo -e "-----------------"
 
 
@@ -37,7 +37,7 @@ echo -e "-----------------"
 SCIDB_CONFIG=$1
 if [ ! -f $SCIDB_CONFIG ]; then
     echo -e "\nWARNING: SciDB config file '${SCIDB_CONFIG}' not found. "
-    : ${SCIDB_INSTALL_PATH:=/opt/scidb/14.12}
+    : ${SCIDB_INSTALL_PATH:=/opt/scidb/15.7}
     if [ ! -f ${SCIDB_INSTALL_PATH}/etc/config.ini ]; then
       exit;
     else SCIDB_CONFIG=${SCIDB_INSTALL_PATH}/etc/config.ini
@@ -58,9 +58,9 @@ fi
 
 echo -e "Create installation directory under ${HOME}/.scidb4geo ..."
 mkdir ${HOME}/.scidb4geo &> /dev/null # create directory for configuration files
-echo -e "Copying configuration and macro..."
+echo -e "Copying configuration file..."
 cp -f ${SCIDB_CONFIG} ${HOME}/.scidb4geo/config.ini # copy scidb configuration file
-cp -f scidb4geo_macro.afl ${HOME}/.scidb4geo/scidb4geo_macro.afl # copy macro
+#cp -f scidb4geo_macro.afl ${HOME}/.scidb4geo/scidb4geo_macro.afl # copy macro
 
 echo -e "Extracting SciDB configuration parameters ..."
 # Extract database connection information out of config file # TODO: extract dbname...
@@ -97,24 +97,24 @@ su postgres -c  "psql -d ${dbname} -f dbinstall.sql 1> /dev/null"
 echo -e "Inserting EPSG data..."
 su postgres -c  "psql -d ${dbname} -f spatial_ref_sys.sql 1> /dev/null"
 
-su postgres -c "psql -d ${dbname} -c 'ALTER TABLE scidb4geo_spatialrefsys OWNER TO scidb' 1> /dev/null"
-su postgres -c "psql -d ${dbname} -c 'ALTER TABLE scidb4geo_array_s OWNER TO scidb' 1> /dev/null"
-su postgres -c "psql -d ${dbname} -c 'ALTER TABLE scidb4geo_array_t OWNER TO scidb' 1> /dev/null"
-su postgres -c "psql -d ${dbname} -c 'ALTER TABLE scidb4geo_array_v OWNER TO scidb' 1> /dev/null"
-su postgres -c "psql -d ${dbname} -c 'ALTER TABLE scidb4geo_array_md OWNER TO scidb' 1> /dev/null"
-su postgres -c "psql -d ${dbname} -c 'ALTER TABLE scidb4geo_attribute_md OWNER TO scidb' 1> /dev/null"
-su postgres -c "psql -d ${dbname} -c 'ALTER FUNCTION scidb4geo_proc_array_rename() OWNER TO scidb' 1> /dev/null"
-su postgres -c "psql -d ${dbname} -c 'ALTER FUNCTION scidb4geo_proc_array_remove() OWNER TO scidb' 1> /dev/null"
-su postgres -c "psql -d ${dbname} -c 'ALTER FUNCTION scidb4geo_proc_dimension_rename() OWNER TO scidb' 1> /dev/null"
-su postgres -c "psql -d ${dbname} -c 'ALTER FUNCTION scidb4geo_proc_dimension_remove() OWNER TO scidb' 1> /dev/null"
-su postgres -c "psql -d ${dbname} -c 'ALTER FUNCTION scidb4geo_proc_attribute_rename() OWNER TO scidb' 1> /dev/null"
-su postgres -c "psql -d ${dbname} -c 'ALTER FUNCTION scidb4geo_proc_attribute_remove() OWNER TO scidb' 1> /dev/null"
+su postgres -c "psql -d ${dbname} -c 'ALTER TABLE scidb4geo_spatialrefsys OWNER TO ${dbuser}' 1> /dev/null"
+su postgres -c "psql -d ${dbname} -c 'ALTER TABLE scidb4geo_array_s OWNER TO ${dbuser}' 1> /dev/null"
+su postgres -c "psql -d ${dbname} -c 'ALTER TABLE scidb4geo_array_t OWNER TO ${dbuser}' 1> /dev/null"
+su postgres -c "psql -d ${dbname} -c 'ALTER TABLE scidb4geo_array_v OWNER TO ${dbuser}' 1> /dev/null"
+su postgres -c "psql -d ${dbname} -c 'ALTER TABLE scidb4geo_array_md OWNER TO ${dbuser}' 1> /dev/null"
+su postgres -c "psql -d ${dbname} -c 'ALTER TABLE scidb4geo_attribute_md OWNER TO ${dbuser}' 1> /dev/null"
+su postgres -c "psql -d ${dbname} -c 'ALTER FUNCTION scidb4geo_proc_array_rename() OWNER TO ${dbuser}' 1> /dev/null"
+su postgres -c "psql -d ${dbname} -c 'ALTER FUNCTION scidb4geo_proc_array_remove() OWNER TO ${dbuser}' 1> /dev/null"
+su postgres -c "psql -d ${dbname} -c 'ALTER FUNCTION scidb4geo_proc_dimension_rename() OWNER TO ${dbuser}' 1> /dev/null"
+su postgres -c "psql -d ${dbname} -c 'ALTER FUNCTION scidb4geo_proc_dimension_remove() OWNER TO ${dbuser}' 1> /dev/null"
+su postgres -c "psql -d ${dbname} -c 'ALTER FUNCTION scidb4geo_proc_attribute_rename() OWNER TO ${dbuser}' 1> /dev/null"
+su postgres -c "psql -d ${dbname} -c 'ALTER FUNCTION scidb4geo_proc_attribute_remove() OWNER TO ${dbuser}' 1> /dev/null"
 
 
 
 
 
-#su postgres -c "psql -d ${dbname} -c 'REASSIGN OWNED BY postgres TO scidb' 1> /dev/null"
+#su postgres -c "psql -d ${dbname} -c 'REASSIGN OWNED BY postgres TO ${dbuser}' 1> /dev/null"
 
 # For binary distribution, copy shared library to pluginsdir
 if [ -f libscidb4geo.so ]; then

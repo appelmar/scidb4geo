@@ -1,6 +1,6 @@
 /*
-scidb4geo - A SciDB plugin for managing spatially referenced arrays
-Copyright (C) 2015 Marius Appel <marius.appel@uni-muenster.de>
+scidb4geo - A SciDB plugin for managing spacetime earth-observation arrays
+Copyright (C) 2016 Marius Appel <marius.appel@uni-muenster.de>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published by

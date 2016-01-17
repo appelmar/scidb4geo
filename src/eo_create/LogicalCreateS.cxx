@@ -60,8 +60,8 @@ namespace scidb4geo
 
         }
 
-        vector<boost::shared_ptr<OperatorParamPlaceholder> > nextVaryParamPlaceholder ( const vector< ArrayDesc> &schemas ) {
-            vector<boost::shared_ptr<OperatorParamPlaceholder> > res;
+        vector<std::shared_ptr<OperatorParamPlaceholder> > nextVaryParamPlaceholder ( const vector< ArrayDesc> &schemas ) {
+            vector<std::shared_ptr<OperatorParamPlaceholder> > res;
 
             if ( _parameters.size() == 4 ) {
                 //res.push_back(PARAM_CONSTANT(TID_STRING));

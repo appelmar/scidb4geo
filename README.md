@@ -1,5 +1,5 @@
 # scidb4geo
-A SciDB Plugin for Managing Spatial and Temporal Reference Information of Arrays
+A SciDB plugin for managing spacetime earth-observation arrays
 
 ## Description
 This is a preliminary version of a plugin for managing spatial and temporal reference information of SciDB arrays. It defines a couple of UDOs and adds actual reference information to the system catalog. It can be used within AFL or AQL. 
@@ -43,7 +43,5 @@ We assume that you have a running SciDB build environment, i.e. you are able to 
 5. Setup, make, install, and run SciDB  (i.e. subsequently run `$SCIDB_TRUNK/run.py setup | make | install | run`)
 7. Run the provided `$SCIDB_TRUNK/examples/scidb4geo/install/setup.sh` script to create neccessary tables in the system catalog
 8. Now, you can load the plugin using `AFL% load_library('scidb4geo');`
-
-
 
 

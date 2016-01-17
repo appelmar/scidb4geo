@@ -24,16 +24,23 @@ set (scidb4geo_VERSION_MINOR 1)
 configure_file( ${CMAKE_CURRENT_LIST_DIR}/src/plugin.h.in ${CMAKE_CURRENT_LIST_DIR}/src/plugin.h )
 
 
+# Make sure that logical operators are always first!
+
 set (scidb4geo_src
     src/plugin.cxx
+    
+    src/eo_all/LogicalAll.cxx
+    src/eo_all/PhysicalAll.cxx
+    
     src/eo_setsrs/LogicalSetSRS.cxx
     src/eo_setsrs/PhysicalSetSRS.cxx
     
     src/eo_getsrs/LogicalGetSRS.cxx
     src/eo_getsrs/PhysicalGetSRS.cxx
     
-    src/eo_settrs/PhysicalSetTRS.cxx
     src/eo_settrs/LogicalSetTRS.cxx
+    src/eo_settrs/PhysicalSetTRS.cxx
+    
     
     src/eo_gettrs/LogicalGetTRS.cxx
     src/eo_gettrs/PhysicalGetTRS.cxx
@@ -52,24 +59,14 @@ set (scidb4geo_src
     src/eo_over/LogicalOver.cxx
     src/eo_over/PhysicalOver.cxx
     
-    src/eo_setmd/PhysicalSetMD.cxx
     src/eo_setmd/LogicalSetMD.cxx
-
-    src/eo_getmd/PhysicalGetMD.cxx
+    src/eo_setmd/PhysicalSetMD.cxx
+    
     src/eo_getmd/LogicalGetMD.cxx
+    src/eo_getmd/PhysicalGetMD.cxx
     
-    src/eo_cpsrs/PhysicalCpSRS.cxx
     src/eo_cpsrs/LogicalCpSRS.cxx
-    
-        src/eo_create/ArraySchemaUtils.cxx
-	src/eo_create/LogicalCreateSTV.cxx
-	src/eo_create/PhysicalCreateSTV.cxx
-	src/eo_create/LogicalCreateST.cxx
-	src/eo_create/PhysicalCreateST.cxx
-	src/eo_create/LogicalCreateSV.cxx
-	src/eo_create/PhysicalCreateSV.cxx
-	src/eo_create/LogicalCreateS.cxx
-	src/eo_create/PhysicalCreateS.cxx
+    src/eo_cpsrs/PhysicalCpSRS.cxx 
 	
     src/PostgresWrapper.cxx
     src/AffineTransform.cxx
@@ -85,4 +82,4 @@ add_library(scidb4geo SHARED ${scidb4geo_src} ${scidb4geo_include} )
 extractDebugInfo("${GENERAL_OUTPUT_DIRECTORY}/plugins" "libscidb4geo${CMAKE_SHARED_LIBRARY_SUFFIX}" scidb4geo)
 set_target_properties(scidb4geo PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${GENERAL_OUTPUT_DIRECTORY}/plugins)
 get_target_property(OUTPUT_SCIDB scidb4geo LOCATION)
-add_custom_command(TARGET scidb4geo POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${OUTPUT_SCIDB} ${CMAKE_CURRENT_LIST_DIR}/install/. COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_LIST_DIR}/src/scidb4geo_macro.afl ${CMAKE_CURRENT_LIST_DIR}/install/scidb4geo_macro.afl COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_CURRENT_LIST_DIR} tar "cfz" "scidb4geo_bin.tar.gz" install/ ) # copy shared library not only to scidb plugins path but also to the plugins dev path for binary packaging
+add_custom_command(TARGET scidb4geo POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${OUTPUT_SCIDB} ${CMAKE_CURRENT_LIST_DIR}/install/.  COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_CURRENT_LIST_DIR} tar "cfz" "scidb4geo_bin.tar.gz" install/ ) # copy shared library not only to scidb plugins path but also to the plugins dev path for binary packaging

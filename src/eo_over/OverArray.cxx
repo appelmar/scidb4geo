@@ -17,9 +17,9 @@ along with SciDB.  If not, see <http://www.gnu.org/licenses/agpl-3.0.html>
 -----------------------------------------------------------------------------
 Modification date: (2015-08-01)
 
-Modifications are copyright (C) 2015 Marius Appel <marius.appel@uni-muenster.de>
+Modifications are copyright (C) 2016 Marius Appel <marius.appel@uni-muenster.de>
 
-scidb4geo - A SciDB plugin for managing spatially referenced arrays
+scidb4geo - A SciDB plugin for managing spacetime earth-observation arrays
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published by
@@ -46,7 +46,7 @@ namespace scidb4geo
     using namespace scidb;
 
 
-    int OverChunkIterator::getMode()
+    int OverChunkIterator::getMode() const
     {
         return iterationMode;
     }
@@ -119,7 +119,7 @@ namespace scidb4geo
         return !has_cur;
     }
 
-    bool OverChunkIterator::isEmpty()
+    bool OverChunkIterator::isEmpty() const
     {
         return false;
     }
@@ -200,9 +200,9 @@ namespace scidb4geo
         return withOverlap ? p_last_overlap : p_last;
     }
 
-    boost::shared_ptr<ConstChunkIterator> OverChunk::getConstIterator ( int iterationMode ) const
+    std::shared_ptr<ConstChunkIterator> OverChunk::getConstIterator ( int iterationMode ) const
     {
-        return boost::shared_ptr<ConstChunkIterator> ( new OverChunkIterator ( array, this, attr_id, iterationMode ) );
+        return std::shared_ptr<ConstChunkIterator> ( new OverChunkIterator ( array, this, attr_id, iterationMode ) );
     }
 
     int OverChunk::getCompressionMethod() const
@@ -264,22 +264,23 @@ namespace scidb4geo
 
     void OverArrayIterator::nextChunk()
     {
-        chunkInitialized = false;
-        while ( true ) {
+      
+      chunkInitialized = false;
+        while (true) {
             int i = dims.size() - 1;
-            while ( ( currPos[i] += dims[i].getChunkInterval() ) > dims[i].getEndMax() ) {
-                if ( i == 0 ) {
+            while ((currPos[i] += dims[i].getChunkInterval()) > dims[i].getEndMax()) {
+                if (i == 0) {
                     hasCurrent = false;
                     return;
                 }
                 currPos[i] = dims[i].getStartMin();
                 i -= 1;
             }
-            if ( array._desc_C.getHashedChunkNumber ( currPos ) % array._ninstances == array._instance_id ) {
+            if (array._desc_C.getPrimaryInstanceId(currPos,array._ninstances) == array._instance_id) {
                 hasCurrent = true;
                 return;
             }
-        }
+        } 
     }
 
     bool OverArrayIterator::setPosition ( Coordinates const &pos )
@@ -290,10 +291,12 @@ namespace scidb4geo
                 return hasCurrent = false;
             }
         }
-        currPos = pos;
-        array._desc_C.getChunkPositionFor ( currPos );
+        	
+	currPos = pos;
+        array._desc_C.getChunkPositionFor(currPos);
         chunkInitialized = false;
-        return hasCurrent = array._desc_C.getHashedChunkNumber ( currPos ) % array._ninstances == array._instance_id;
+        return hasCurrent = array._desc_C.getPrimaryInstanceId(currPos, array._ninstances) == array._instance_id;
+	
     }
 
     void OverArrayIterator::reset()
@@ -338,14 +341,14 @@ namespace scidb4geo
         return _desc_C;
     }
 
-    boost::shared_ptr<ConstArrayIterator> OverArray::getConstIterator ( AttributeID attr ) const
+    std::shared_ptr<ConstArrayIterator> OverArray::getConstIterator ( AttributeID attr ) const
     {
-        return boost::shared_ptr<ConstArrayIterator> ( new OverArrayIterator ( * ( OverArray * ) this, attr ) );
+        return std::shared_ptr<ConstArrayIterator> ( new OverArrayIterator ( * ( OverArray * ) this, attr ) );
     }
 
 
 
-    OverArray::OverArray ( boost::shared_ptr<Query> &query, ArrayDesc const &descA, ArrayDesc const &descB, ArrayDesc const &descC )
+    OverArray::OverArray ( std::shared_ptr<Query> &query, ArrayDesc const &descA, ArrayDesc const &descB, ArrayDesc const &descC )
         :  _desc_A ( descA ),  _desc_B ( descB ),  _desc_C ( descC ),
            _xidx_A ( -1 ), _xidx_B ( -1 ), _yidx_A ( -1 ), _yidx_B ( -1 ), _tidx_A ( -1 ), _tidx_B ( -1 ),
            _ninstances ( 0 ), _instance_id ( INVALID_INSTANCE )
@@ -355,7 +358,7 @@ namespace scidb4geo
         _ninstances = query->getInstancesCount();
         _instance_id = query->getInstanceID();
 
-        assert ( ninstances > 0 && instance_id < ninstances );
+        assert ( _ninstances > 0 && _instance_id < _ninstances );
 
         // Get reference information
         vector<string> nameAB;

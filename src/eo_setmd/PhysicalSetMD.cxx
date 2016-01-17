@@ -17,9 +17,9 @@ along with SciDB.  If not, see <http://www.gnu.org/licenses/agpl-3.0.html>
 -----------------------------------------------------------------------------
 Modification date: (2015-08-01)
 
-Modifications are copyright (C) 2015 Marius Appel <marius.appel@uni-muenster.de>
+Modifications are copyright (C) 2016 Marius Appel <marius.appel@uni-muenster.de>
 
-scidb4geo - A SciDB plugin for managing spatially referenced arrays
+scidb4geo - A SciDB plugin for managing spacetime earth-observation arrays
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published by
@@ -63,20 +63,20 @@ namespace scidb4geo
 
 
         virtual void preSingleExecute ( shared_ptr<Query> query ) {
-            string arrayName = ( ( boost::shared_ptr<OperatorParamReference> & ) _parameters[0] )->getObjectName();
+            string arrayName = ( ( std::shared_ptr<OperatorParamReference> & ) _parameters[0] )->getObjectName();
             string keys;
             string vals;
 
             if ( _parameters.size() == 3 ) {
                 // Set array metadata
-                keys = ( ( boost::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[1] )->getExpression()->evaluate().getString();
-                vals = ( ( boost::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[2] )->getExpression()->evaluate().getString();
+                keys = ( ( std::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[1] )->getExpression()->evaluate().getString();
+                vals = ( ( std::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[2] )->getExpression()->evaluate().getString();
 
             }
             else if ( _parameters.size() == 4 ) {
                 // Set attribute metadata
-                keys = ( ( boost::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[2] )->getExpression()->evaluate().getString();
-                vals = ( ( boost::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[3] )->getExpression()->evaluate().getString();
+                keys = ( ( std::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[2] )->getExpression()->evaluate().getString();
+                vals = ( ( std::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[3] )->getExpression()->evaluate().getString();
             }
 
             vector <string> k;
@@ -97,15 +97,15 @@ namespace scidb4geo
                 PostgresWrapper::instance()->dbSetArrayMD ( arrayName, kv ); // TODO: Add domain
             }
             else if ( _parameters.size() == 4 ) {
-                string attrname = ( ( boost::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[1] )->getExpression()->evaluate().getString();
+                string attrname = ( ( std::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[1] )->getExpression()->evaluate().getString();
                 PostgresWrapper::instance()->dbSetAttributeMD ( arrayName, attrname, kv ); // TODO: Add domain
             }
 
         }
 
-        boost::shared_ptr< Array> execute ( std::vector< boost::shared_ptr< Array> > &inputArrays,
-                                            boost::shared_ptr<Query> query ) {
-            return boost::shared_ptr< Array>();
+        std::shared_ptr< Array> execute ( std::vector< std::shared_ptr< Array> > &inputArrays,
+                                            std::shared_ptr<Query> query ) {
+            return std::shared_ptr< Array>();
         }
 
 

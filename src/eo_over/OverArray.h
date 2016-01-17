@@ -17,9 +17,9 @@ along with SciDB.  If not, see <http://www.gnu.org/licenses/agpl-3.0.html>
 -----------------------------------------------------------------------------
 Modification date: (2015-08-01)
 
-Modifications are copyright (C) 2015 Marius Appel <marius.appel@uni-muenster.de>
+Modifications are copyright (C) 2016 Marius Appel <marius.appel@uni-muenster.de>
 
-scidb4geo - A SciDB plugin for managing spatially referenced arrays
+scidb4geo - A SciDB plugin for managing spacetime earth-observation arrays
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published by
@@ -65,7 +65,7 @@ namespace scidb4geo
         virtual const AttributeDesc &getAttributeDesc() const;
         virtual Coordinates const &getFirstPosition ( bool withOverlap ) const;
         virtual Coordinates const &getLastPosition ( bool withOverlap ) const;
-        virtual boost::shared_ptr<ConstChunkIterator> getConstIterator ( int iterationMode ) const;
+        virtual std::shared_ptr<ConstChunkIterator> getConstIterator ( int iterationMode ) const;
         virtual int getCompressionMethod() const;
         virtual Array const &getArray() const;
 
@@ -85,8 +85,8 @@ namespace scidb4geo
     class OverChunkIterator : public ConstChunkIterator
     {
     public:
-        virtual int getMode();
-        virtual bool isEmpty();
+        virtual int getMode() const;
+        virtual bool isEmpty() const;
         virtual Value &getItem();
         virtual void operator ++();
         virtual bool end();
@@ -94,7 +94,7 @@ namespace scidb4geo
         virtual bool setPosition ( Coordinates const &pos );
         virtual void reset();
         ConstChunk const &getChunk();
-        virtual boost::shared_ptr<Query> getQuery() {
+        virtual std::shared_ptr<Query> getQuery() {
             return _query;
         }
 
@@ -112,7 +112,7 @@ namespace scidb4geo
         Value _value;
         Value _true_val;
         bool _nullable;
-        boost::shared_ptr<Query> _query;
+        std::shared_ptr<Query> _query;
 
         bool _has_x;
         bool _has_y;
@@ -158,9 +158,9 @@ namespace scidb4geo
         friend class OverChunk;
 
     public:
-        OverArray ( boost::shared_ptr<Query> &query, ArrayDesc const &descA, ArrayDesc const &descB, ArrayDesc const &descC );
+        OverArray ( std::shared_ptr<Query> &query, ArrayDesc const &descA, ArrayDesc const &descB, ArrayDesc const &descC );
         virtual ArrayDesc const &getArrayDesc() const;
-        virtual boost::shared_ptr<ConstArrayIterator> getConstIterator ( AttributeID attr ) const;
+        virtual std::shared_ptr<ConstArrayIterator> getConstIterator ( AttributeID attr ) const;
 
     private:
 

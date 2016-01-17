@@ -17,9 +17,9 @@ along with SciDB.  If not, see <http://www.gnu.org/licenses/agpl-3.0.html>
 -----------------------------------------------------------------------------
 Modification date: (2015-08-01)
 
-Modifications are copyright (C) 2015 Marius Appel <marius.appel@uni-muenster.de>
+Modifications are copyright (C) 2016 Marius Appel <marius.appel@uni-muenster.de>
 
-scidb4geo - A SciDB plugin for managing spatially referenced arrays
+scidb4geo - A SciDB plugin for managing spacetime earth-observation arrays
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published by
@@ -53,16 +53,16 @@ namespace scidb4geo
             PhysicalOperator ( logicalName, physicalName, parameters, schema )
         { }
 
-        virtual ArrayDistribution getOutputDistribution ( const std::vector<ArrayDistribution> &inputDistributions,
+        virtual RedistributeContext getOutputDistribution ( const std::vector<RedistributeContext> &inputDistributions,
                 const std::vector< ArrayDesc> &inputSchemas ) const {
-            return ArrayDistribution ( psHashPartitioned );
+            return RedistributeContext ( psHashPartitioned );
         }
 
 
-        boost::shared_ptr<Array> execute ( vector< boost::shared_ptr<Array> > &inputArrays, boost::shared_ptr<Query> query ) {
+        std::shared_ptr<Array> execute ( vector< std::shared_ptr<Array> > &inputArrays, std::shared_ptr<Query> query ) {
             assert ( inputArrays.size() == 2 );
             assert ( _parameters.size() == 0 );
-            return boost::shared_ptr<Array> ( new OverArray ( query, inputArrays[0]->getArrayDesc(), inputArrays[1]->getArrayDesc(), _schema ) );
+            return std::shared_ptr<Array> ( new OverArray ( query, inputArrays[0]->getArrayDesc(), inputArrays[1]->getArrayDesc(), _schema ) );
         }
     };
     REGISTER_PHYSICAL_OPERATOR_FACTORY ( PhysicalOver, "eo_over", "PhysicalOver" );

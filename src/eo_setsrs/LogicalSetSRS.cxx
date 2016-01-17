@@ -17,9 +17,9 @@ along with SciDB.  If not, see <http://www.gnu.org/licenses/agpl-3.0.html>
 -----------------------------------------------------------------------------
 Modification date: (2015-08-01)
 
-Modifications are copyright (C) 2015 Marius Appel <marius.appel@uni-muenster.de>
+Modifications are copyright (C) 2016 Marius Appel <marius.appel@uni-muenster.de>
 
-scidb4geo - A SciDB plugin for managing spatially referenced arrays
+scidb4geo - A SciDB plugin for managing spacetime earth-observation arrays
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published by
@@ -103,8 +103,8 @@ namespace scidb4geo
 
 
 
-        vector<boost::shared_ptr<OperatorParamPlaceholder> > nextVaryParamPlaceholder ( const vector< ArrayDesc> &schemas ) {
-            vector<boost::shared_ptr<OperatorParamPlaceholder> > res;
+        vector<std::shared_ptr<OperatorParamPlaceholder> > nextVaryParamPlaceholder ( const vector< ArrayDesc> &schemas ) {
+            vector<std::shared_ptr<OperatorParamPlaceholder> > res;
 
             // Par 4: String or integer (either affine_transform_string or auth_srid)
             if ( _parameters.size() == 3 ) {
@@ -130,25 +130,26 @@ namespace scidb4geo
 
 
 
-        void inferArrayAccess ( boost::shared_ptr<Query> &query ) {
+        void inferArrayAccess ( std::shared_ptr<Query> &query ) {
             LogicalOperator::inferArrayAccess ( query );
 
             assert ( !_parameters.empty() );
             assert ( _parameters.front()->getParamType() == PARAM_ARRAY_REF );
 
-            const string &arrayName = ( ( boost::shared_ptr<OperatorParamReference> & ) _parameters.front() )->getObjectName();
+            const string &arrayName = ( ( std::shared_ptr<OperatorParamReference> & ) _parameters.front() )->getObjectName();
 
             assert ( arrayName.find ( '@' ) == std::string::npos );
 
             ArrayDesc srcDesc;
-            SystemCatalog::getInstance()->getArrayDesc ( arrayName, srcDesc );
+	    SystemCatalog::getInstance()->getArrayDesc(arrayName, query->getCatalogVersion(arrayName), LAST_VERSION, srcDesc);
+
             if ( srcDesc.isTransient() ) {
-                boost::shared_ptr<SystemCatalog::LockDesc> lock ( boost::make_shared<SystemCatalog::LockDesc> ( arrayName,
+                std::shared_ptr<SystemCatalog::LockDesc> lock ( std::make_shared<SystemCatalog::LockDesc> ( arrayName,
                         query->getQueryID(),
                         Cluster::getInstance()->getLocalInstanceId(),
                         SystemCatalog::LockDesc::COORD,
                         SystemCatalog::LockDesc::WR ) );
-                boost::shared_ptr<SystemCatalog::LockDesc> resLock ( query->requestLock ( lock ) );
+                std::shared_ptr<SystemCatalog::LockDesc> resLock ( query->requestLock ( lock ) );
 
                 assert ( resLock );
                 assert ( resLock->getLockMode() >= SystemCatalog::LockDesc::WR );
@@ -162,7 +163,7 @@ namespace scidb4geo
 
 
 
-        ArrayDesc inferSchema ( std::vector<ArrayDesc> schemas, boost::shared_ptr<Query> query ) {
+        ArrayDesc inferSchema ( std::vector<ArrayDesc> schemas, std::shared_ptr<Query> query ) {
             assert ( schemas.size() == 0 );
             assert ( _parameters.size() == 5 || _parameters.size() == 6 );
             assert ( _parameters[0]->getParamType() == PARAM_ARRAY_REF );

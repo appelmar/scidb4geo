@@ -17,9 +17,9 @@ along with SciDB.  If not, see <http://www.gnu.org/licenses/agpl-3.0.html>
 -----------------------------------------------------------------------------
 Modification date: (2015-08-01)
 
-Modifications are copyright (C) 2015 Marius Appel <marius.appel@uni-muenster.de>
+Modifications are copyright (C) 2016 Marius Appel <marius.appel@uni-muenster.de>
 
-scidb4geo - A SciDB plugin for managing spatially referenced arrays
+scidb4geo - A SciDB plugin for managing spacetime earth-observation arrays
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published by
@@ -56,7 +56,7 @@ namespace scidb4geo
             ADD_PARAM_INPUT()
         }
 
-        ArrayDesc inferSchema ( std::vector<ArrayDesc> schemas, boost::shared_ptr<Query> query ) {
+        ArrayDesc inferSchema ( std::vector<ArrayDesc> schemas, std::shared_ptr<Query> query ) {
             assert ( schemas.size() == 2 );
             assert ( _parameters.size() == 0 );
 
@@ -68,8 +68,9 @@ namespace scidb4geo
 
             // Check dimensions
             Dimensions const &dims = schemas[0].getDimensions();
+	   
             for ( size_t i = 0, n = dims.size();  i < n; i++ ) {
-                if ( dims[i].getLength() == INFINITE_LENGTH ) {
+                if ( dims[i].isMaxStar()) {
                     SCIDB4GEO_ERROR ( "Operator works only on bounded dimensions", SCIDB4GEO_ERR_INVALIDDIMENSION );
                 }
             }
@@ -96,7 +97,7 @@ namespace scidb4geo
                                                      emptyTag->getVarSize() ) );
             }
 
-            return ArrayDesc ( "OverArray", outAttrs, dims );
+            return ArrayDesc ( "OverArray", outAttrs, dims, defaultPartitioning()  );
 
         }
     };

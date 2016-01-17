@@ -17,9 +17,9 @@ along with SciDB.  If not, see <http://www.gnu.org/licenses/agpl-3.0.html>
 -----------------------------------------------------------------------------
 Modification date: (2015-08-01)
 
-Modifications are copyright (C) 2015 Marius Appel <marius.appel@uni-muenster.de>
+Modifications are copyright (C) 2016 Marius Appel <marius.appel@uni-muenster.de>
 
-scidb4geo - A SciDB plugin for managing spatially referenced arrays
+scidb4geo - A SciDB plugin for managing spacetime earth-observation arrays
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published by
@@ -64,7 +64,7 @@ namespace scidb4geo
     public:
         PhysicalSetSRS ( const string &logicalName, const string &physicalName, const Parameters &parameters, const ArrayDesc &schema ) :
             PhysicalOperator ( logicalName, physicalName, parameters, schema ) {
-            _arrayName = ( ( boost::shared_ptr<OperatorParamReference> & ) parameters[0] )->getObjectName();
+            _arrayName = ( ( std::shared_ptr<OperatorParamReference> & ) parameters[0] )->getObjectName();
         }
 
 
@@ -81,17 +81,21 @@ namespace scidb4geo
             }
 
             // Construct SRS object out of parameters
-            AffineTransform A ( ( ( boost::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[_parameters.size() - 1] )->getExpression()->evaluate().getString() ); // create affine transform based on string
-            string auth_name = ( ( boost::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[3] )->getExpression()->evaluate().getString();
-            int auth_srid = ( ( boost::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[4] )->getExpression()->evaluate().getInt32();
-            string dim_x = ( ( boost::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[1] )->getExpression()->evaluate().getString();
-            string dim_y = ( ( boost::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[2] )->getExpression()->evaluate().getString();
+            AffineTransform A ( ( ( std::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[_parameters.size() - 1] )->getExpression()->evaluate().getString() ); // create affine transform based on string
+            string auth_name = ( ( std::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[3] )->getExpression()->evaluate().getString();
+            int auth_srid = ( ( std::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[4] )->getExpression()->evaluate().getInt32();
+            string dim_x = ( ( std::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[1] )->getExpression()->evaluate().getString();
+            string dim_y = ( ( std::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[2] )->getExpression()->evaluate().getString();
 
 
             // Check whether dimension exists
-            ArrayID arrayId = SystemCatalog::getInstance()->findArrayByName ( _arrayName );
-            boost::shared_ptr<ArrayDesc> arrayDesc = SystemCatalog::getInstance()->getArrayDesc ( arrayId );
-            Dimensions dims = arrayDesc->getDimensions();
+//             ArrayID arrayId = SystemCatalog::getInstance()->findArrayByName ( _arrayName );
+//             std::shared_ptr<ArrayDesc> arrayDesc = SystemCatalog::getInstance()->getArrayDesc ( arrayId );
+	    
+	    ArrayDesc arrayDesc;
+	    SystemCatalog::getInstance()->getArrayDesc(_arrayName, query->getCatalogVersion(_arrayName), LAST_VERSION, arrayDesc);
+	    
+            Dimensions dims = arrayDesc.getDimensions();
             bool dimOK_x = false;
             bool dimOK_y = false;
             for ( size_t i = 0; i < dims.size(); ++i ) {
@@ -126,9 +130,9 @@ namespace scidb4geo
 
         }
 
-        boost::shared_ptr< Array> execute ( std::vector< boost::shared_ptr< Array> > &inputArrays,
-                                            boost::shared_ptr<Query> query ) {
-            return boost::shared_ptr< Array>();
+        std::shared_ptr< Array> execute ( std::vector< std::shared_ptr< Array> > &inputArrays,
+                                            std::shared_ptr<Query> query ) {
+            return std::shared_ptr< Array>();
         }
 
 

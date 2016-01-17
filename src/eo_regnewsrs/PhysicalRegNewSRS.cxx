@@ -17,9 +17,9 @@ along with SciDB.  If not, see <http://www.gnu.org/licenses/agpl-3.0.html>
 -----------------------------------------------------------------------------
 Modification date: (2015-08-01)
 
-Modifications are copyright (C) 2015 Marius Appel <marius.appel@uni-muenster.de>
+Modifications are copyright (C) 2016 Marius Appel <marius.appel@uni-muenster.de>
 
-scidb4geo - A SciDB plugin for managing spatially referenced arrays
+scidb4geo - A SciDB plugin for managing spacetime earth-observation arrays
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published by
@@ -60,23 +60,23 @@ namespace scidb4geo
             PhysicalOperator ( logicalName, physicalName, parameters, schema ) {
         }
 
-        virtual ArrayDistribution getOutputDistribution ( const std::vector<ArrayDistribution> &inputDistributions,
+        virtual RedistributeContext getOutputDistribution ( const std::vector<RedistributeContext> &inputDistributions,
                 const std::vector< ArrayDesc> &inputSchemas ) const {
-            return ArrayDistribution ( psLocalInstance );
+            return RedistributeContext ( psLocalInstance );
         }
 
-        void preSingleExecute ( boost::shared_ptr<Query> query ) {
+        void preSingleExecute ( std::shared_ptr<Query> query ) {
             assert ( _parameters.size() == 4 );
 
             SRSInfo info;
-            info.auth_name  = ( ( boost::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[0] )->getExpression()->evaluate().getString();
-            info.auth_srid  = ( ( boost::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[1] )->getExpression()->evaluate().getInt32();
-            info.srtext = ( ( boost::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[2] )->getExpression()->evaluate().getString();
-            info.proj4text = ( ( boost::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[3] )->getExpression()->evaluate().getString();
+            info.auth_name  = ( ( std::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[0] )->getExpression()->evaluate().getString();
+            info.auth_srid  = ( ( std::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[1] )->getExpression()->evaluate().getInt32();
+            info.srtext = ( ( std::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[2] )->getExpression()->evaluate().getString();
+            info.proj4text = ( ( std::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[3] )->getExpression()->evaluate().getString();
 
 
             PostgresWrapper::instance()->dbRegNewSRS ( info );
-            boost::shared_ptr<TupleArray> tuples ( boost::make_shared<TupleArray> ( _schema, _arena ) );
+            std::shared_ptr<TupleArray> tuples ( std::make_shared<TupleArray> ( _schema, _arena ) );
 
             Value tuple[4];
             tuple[0].setString ( info.auth_name );
@@ -89,17 +89,17 @@ namespace scidb4geo
         }
 
 
-        boost::shared_ptr<Array> execute ( vector< boost::shared_ptr<Array> > &inputArrays, boost::shared_ptr<Query> query ) {
+        std::shared_ptr<Array> execute ( vector< std::shared_ptr<Array> > &inputArrays, std::shared_ptr<Query> query ) {
             // Returns an in-memory array
             assert ( inputArrays.size() == 0 );
             if ( !_result ) {
-                _result = boost::make_shared<MemArray> ( _schema, query );
+                _result = std::make_shared<MemArray> ( _schema, query );
             }
             return _result;
         }
 
     private:
-        boost::shared_ptr<Array> _result;
+        std::shared_ptr<Array> _result;
     };
 
     REGISTER_PHYSICAL_OPERATOR_FACTORY ( PhysicalRegNewSRS, "eo_regnewsrs", "PhysicalRegNewSRS" );
