@@ -91,8 +91,7 @@ namespace scidb4geo
         LogicalSetSRS ( const string &logicalName, const string &alias ) :
             LogicalOperator ( logicalName, alias ) {
 
-            _properties.tile = true;
-
+            
             ADD_PARAM_IN_ARRAY_NAME2 ( PLACEHOLDER_ARRAY_NAME_VERSION | PLACEHOLDER_ARRAY_NAME_INDEX_NAME ) // Arrayname will be stored in _parameters[0]
             //ADD_PARAM_IN_DIMENSION_NAME()
             //ADD_PARAM_IN_DIMENSION_NAME()
@@ -125,39 +124,6 @@ namespace scidb4geo
             return res;
         }
 
-
-
-
-
-
-        void inferArrayAccess ( std::shared_ptr<Query> &query ) {
-            LogicalOperator::inferArrayAccess ( query );
-
-            assert ( !_parameters.empty() );
-            assert ( _parameters.front()->getParamType() == PARAM_ARRAY_REF );
-
-            const string &arrayName = ( ( std::shared_ptr<OperatorParamReference> & ) _parameters.front() )->getObjectName();
-
-            assert ( arrayName.find ( '@' ) == std::string::npos );
-
-            ArrayDesc srcDesc;
-	    SystemCatalog::getInstance()->getArrayDesc(arrayName, query->getCatalogVersion(arrayName), LAST_VERSION, srcDesc);
-
-            if ( srcDesc.isTransient() ) {
-                std::shared_ptr<SystemCatalog::LockDesc> lock ( std::make_shared<SystemCatalog::LockDesc> ( arrayName,
-                        query->getQueryID(),
-                        Cluster::getInstance()->getLocalInstanceId(),
-                        SystemCatalog::LockDesc::COORD,
-                        SystemCatalog::LockDesc::WR ) );
-                std::shared_ptr<SystemCatalog::LockDesc> resLock ( query->requestLock ( lock ) );
-
-                assert ( resLock );
-                assert ( resLock->getLockMode() >= SystemCatalog::LockDesc::WR );
-            }
-            else {
-                LogicalOperator::inferArrayAccess ( query ); // take read lock as per usual
-            }
-        }
 
 
 
