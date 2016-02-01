@@ -141,8 +141,11 @@ namespace scidb4geo
          */
         void dbRegNewSRS ( const SRSInfo &info );
 
-
-
+	 
+	/**
+         * Tries to automatically find and add a SRS with given authority name and id from spatialreference.org 
+         */
+        bool dbRegSRSFromSRORG ( const string &auth_name, const int &auth_id);
 
         /**
          * Sets temporal reference of an array
