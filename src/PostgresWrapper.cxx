@@ -28,6 +28,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/ini_parser.hpp>
 
+#include <curl/curl.h>
+
 
 namespace scidb4geo
 {
@@ -103,31 +105,53 @@ namespace scidb4geo
         pqxx::result r = txn.exec ( q.str() );
 
 
+	txn.commit();
 
         // if #results = 0, throw exception unknown SRS
         // else if #nresults > 1 warning, take first
         // store returned ID
         if ( r.size() == 0 ) {
-            stringstream serr;
-            serr << "Unknown SRS '" << auth_name << ":" << auth_srid << "'";
-            SCIDB4GEO_ERROR ( serr.str(), SCIDB4GEO_ERR_UNKNOWN_SRS );
-            return;
+
+	  // Avoid nested transactions
+	  
+            //Try to lookup at spatialreference.org
+            if ( !dbRegSRSFromSRORG ( auth_name, auth_srid ) ) {
+                stringstream serr;
+                serr << "Unknown SRS '" << auth_name << ":" << auth_srid << "'";
+                SCIDB4GEO_ERROR ( serr.str(), SCIDB4GEO_ERR_UNKNOWN_SRS );
+                return;
+            }
+            else {
+	      pqxx::work txn2 ( *_c );
+                // Try once more...
+                SCIDB4GEO_DEBUG ( "Performing SQL query '" + q.str() + "'" );
+                r = txn2.exec ( q.str() );
+                if ( r.size() == 0 ) {
+                    stringstream serr;
+                    serr << "Unknown SRS '" << auth_name << ":" << auth_srid << "'";
+                    SCIDB4GEO_ERROR ( serr.str(), SCIDB4GEO_ERR_UNKNOWN_SRS );
+                    return;
+                }
+                txn2.commit();
+            }
+            
         }
-        if ( r.size() > 1 ) {
+        else if ( r.size() > 1 ) {
             stringstream ss;
             ss << "Found multiple entries for SRS" << auth_name  << ":" << auth_srid << "; using first entry";
             SCIDB4GEO_WARN ( ss.str() );
         }
+
         int srid = r[0][0].as<int>();
 
-
+	pqxx::work txn3 ( *_c );
 
         // 2. make sure that refsys will be changed if already set
         // delete from scidb4geo_array_s where arrayname = ?1;
         q.str ( "" );
         q << "delete from scidb4geo_array_s where arrayname = '" << arrayname << "';";
         SCIDB4GEO_DEBUG ( "Performing SQL query '" + q.str() + "'" );
-        txn.exec ( q.str() );
+        txn3.exec ( q.str() );
 
         // 3. Add to scidb4geo_array_s table
         // insert into scidb4geo_array_s(arrayname, xdim, ydim,
@@ -135,10 +159,10 @@ namespace scidb4geo
         q << setprecision ( numeric_limits< double >::digits10 ) << "insert into scidb4geo_array_s(arrayname, xdim, ydim, srid, x0,y0,a11,a12,a21,a22) values('" << arrayname << "','" << dim_x << "','" << dim_y << "'," << srid << ","
           << A._x0 << "," << A._y0 << "," << A._a11 << "," << A._a12 << "," << A._a21 << "," << A._a22  << ");";
         SCIDB4GEO_DEBUG ( "Performing SQL query '" + q.str() + "'" );
-        txn.exec ( q.str() );
+        txn3.exec ( q.str() );
 
         SCIDB4GEO_DEBUG ( "Committing SQL transaction" );
-        txn.commit();
+        txn3.commit();
 
     }
 
@@ -212,9 +236,9 @@ namespace scidb4geo
         in.push_back ( arrayname );
         vector<SpatialArrayInfo> out =  PostgresWrapper::instance()->dbGetSpatialRef ( in ); // must be called via singleton
         if ( out.size() != 1 ) {
-          SpatialArrayInfo srs;
-	  srs.arrayname = ""; 
-	  out.push_back(srs);
+            SpatialArrayInfo srs;
+            srs.arrayname = "";
+            out.push_back ( srs );
         }
         return out[0];
     }
@@ -284,11 +308,102 @@ namespace scidb4geo
         txn2.exec ( q.str() );
         txn2.commit();
 
-
-
-
-
     }
+
+
+    static size_t responseToStringCallback ( void *ptr, size_t size, size_t count, void *stream )
+    {
+        ( ( string * ) stream )->append ( ( char * ) ptr, 0, size * count );
+        return size * count;
+    }
+
+    bool PostgresWrapper::dbRegSRSFromSRORG ( const string &auth_name, const int &auth_id )
+    {
+        using namespace std;
+
+        // 1. Try to find SRS at spatialreference.org
+	
+        stringstream url_proj4, url_wkt;
+	string auth_name_lower = auth_name;
+	std::transform(auth_name_lower.begin(),auth_name_lower.end(), auth_name_lower.begin(), ::tolower);
+        url_proj4 << "http://www.spatialreference.org/ref/" << auth_name_lower.c_str()  << "/" << auth_id << "/proj4/";
+        url_wkt << "http://www.spatialreference.org/ref/" << auth_name_lower.c_str()  << "/" << auth_id << "/ogcwkt/";
+
+        CURLcode res;
+        char errbuf[CURL_ERROR_SIZE];
+        errbuf[0] = 0;
+        string proj4, wkt;
+
+        try {
+            stringstream ss;
+            ss << "Trying to find SRS definition for '" << auth_name_lower.c_str() << ":" << auth_id << "' from spatialreference.org";
+            SCIDB4GEO_DEBUG ( ss.str() );
+            CURL *curl_handle = curl_easy_init();
+            curl_easy_setopt ( curl_handle, CURLOPT_PORT, 80 );
+            curl_easy_setopt ( curl_handle, CURLOPT_HTTPGET, 1 );
+            curl_easy_setopt ( curl_handle, CURLOPT_ERRORBUFFER, errbuf );
+            curl_easy_setopt ( curl_handle, CURLOPT_WRITEFUNCTION, &responseToStringCallback );
+
+
+            curl_easy_setopt ( curl_handle, CURLOPT_URL, url_proj4.str().c_str() );
+            curl_easy_setopt ( curl_handle, CURLOPT_WRITEDATA, &proj4 );
+	    
+            ss.str ( "" );
+            ss << "Performing HTTP GET " << url_proj4.str().c_str();
+            SCIDB4GEO_DEBUG ( ss.str() );
+
+            res = curl_easy_perform ( curl_handle );
+            if ( res != CURLE_OK ) {
+                throw res;
+            }
+
+            curl_easy_setopt ( curl_handle, CURLOPT_URL, url_wkt.str().c_str() );
+            curl_easy_setopt ( curl_handle, CURLOPT_WRITEDATA, &wkt );
+
+            ss.str ( "" );
+            ss << "Performing HTTP GET " << url_wkt.str().c_str();
+            SCIDB4GEO_DEBUG ( ss.str() );
+
+            res =  curl_easy_perform ( curl_handle );
+            if ( res != CURLE_OK ) {
+                throw res;
+            }
+
+            curl_easy_cleanup ( curl_handle );
+
+
+            if ( proj4.length() == 0 || wkt.length() == 0 ) {
+                throw 0;
+            }
+
+        }
+
+        catch ( int e ) {
+            stringstream serr;
+            serr << "Error while trying to find spatial reference system '" << auth_name.c_str() << ":" << auth_id << "' at spatialreference.org. Returned " << errbuf << ".";
+            SCIDB4GEO_ERROR ( serr.str(), SCIDB4GEO_ERR_UNKNOWN_SRS );
+            return false;
+        }
+
+	stringstream ss;
+        ss << "Sucessfully found SRS definition for '" << auth_name_lower.c_str() << ":" << auth_id << "' from spatialreference.org:\nPROJ4: " << proj4 << "\nWKT:" << wkt << "\n";
+        SCIDB4GEO_DEBUG ( ss.str() );
+	
+	
+        SRSInfo srs;
+        srs.auth_name = auth_name;
+        srs.auth_srid = auth_id;
+        srs.srtext = wkt;
+        srs.proj4text = proj4;
+
+
+        dbRegNewSRS ( srs );
+
+        return true;
+    }
+
+
+
 
 
     void PostgresWrapper::dbSetTemporalRef ( const string &arrayName, const string &dim_t, const string &t0, const string &dt )
@@ -385,17 +500,18 @@ namespace scidb4geo
         return out[0];
     }
 
-     TemporalArrayInfo PostgresWrapper::dbGetTemporalRefOrEmpty ( const string &arrayname ) {
+    TemporalArrayInfo PostgresWrapper::dbGetTemporalRefOrEmpty ( const string &arrayname )
+    {
         vector<string> in;
         in.push_back ( arrayname );
         vector<TemporalArrayInfo> out =  PostgresWrapper::instance()->dbGetTemporalRef ( in ); // must be called via singleton
         if ( out.size() != 1 ) {
-           TemporalArrayInfo trs;
-	   trs.arrayname = "";
-	   return trs;
+            TemporalArrayInfo trs;
+            trs.arrayname = "";
+            return trs;
         }
         return out[0];
-     }
+    }
 
     int PostgresWrapper::dbGetTemporalRefCount ( const vector<string> &arraynames )
     {

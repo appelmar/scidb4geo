@@ -80,7 +80,11 @@ set (scidb4geo_src
 
 file(GLOB scidb4geo_include "*.h")
 
+find_package(CURL REQUIRED)
+include_directories(${CURL_INCLUDE_DIRS})
 add_library(scidb4geo SHARED ${scidb4geo_src} ${scidb4geo_include} )
+target_link_libraries(scidb4geo ${CURL_LIBRARIES})
+
 
 extractDebugInfo("${GENERAL_OUTPUT_DIRECTORY}/plugins" "libscidb4geo${CMAKE_SHARED_LIBRARY_SUFFIX}" scidb4geo)
 set_target_properties(scidb4geo PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${GENERAL_OUTPUT_DIRECTORY}/plugins)
