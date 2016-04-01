@@ -35,7 +35,7 @@ done
   
 # 3. copy public doc to local gh-pages folder
 cp doc/operators/*.html doc/pub/operators/
-cd ../doc/pub
+cd doc/pub
 
 # 4. make this folder as the root of gh-pages branch
 git init
