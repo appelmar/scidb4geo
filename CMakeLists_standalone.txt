@@ -1,0 +1,241 @@
+#
+# scidb4geo - A SciDB plugin for managing spatially referenced arrays
+# Copyright (C) 2015 Marius Appel <marius.appel@uni-muenster.de>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# -----------------------------------------------------------------------------
+
+cmake_minimum_required (VERSION 2.8.11)
+
+
+if(EXISTS "/usr/bin/g++-4.9")
+  set(CMAKE_C_COMPILER "/usr/bin/gcc-4.9")
+  set(MPICH_CC "/usr/bin/gcc-4.9")
+  set(CMAKE_CXX_COMPILER "/usr/bin/g++-4.9")
+  set(MPICH_CXX "/usr/bin/g++-4.9")
+  set(CMAKE_Fortran_COMPILER "/usr/bin/gfortran-4.9")
+  set(MPICH_FC "/usr/bin/gfortran-4.9")
+elseif(EXISTS "/opt/rh/devtoolset-3/root/usr/bin/g++")
+  set(CMAKE_C_COMPILER "/opt/rh/devtoolset-3/root/usr/bin/gcc")
+  set(MPICH_CC "/opt/rh/devtoolset-3/root/usr/bin/gcc")
+  set(CMAKE_CXX_COMPILER "/opt/rh/devtoolset-3/root/usr/bin/g++")
+  set(MPICH_CXX "/opt/rh/devtoolset-3/root/usr/bin/g++")
+  set(CMAKE_Fortran_COMPILER "/opt/rh/devtoolset-3/root/usr/bin/gfortran")
+  set(MPICH_FC "/opt/rh/devtoolset-3/root/usr/bin/gfortran")
+else()
+  message(FATAL_ERROR "SCIDBTRUNK/CMakeLists.txt: cannot find g++ 4.9")
+endif()
+
+
+
+project (scidb4geo CXX)
+
+set(CMAKE_BUILD_TYPE RelWithDebInfo)
+set (scidb4geo_VERSION_MAJOR 0)
+set (scidb4geo_VERSION_MINOR 1)
+#configure_file( ${CMAKE_CURRENT_LIST_DIR}/src/plugin.h.in ${CMAKE_CURRENT_LIST_DIR}/src/plugin.h )
+
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}") # Add custom FindSciDB module
+
+# Make sure that logical operators are always first!
+set (scidb4geo_src
+    src/plugin.cxx
+    
+    src/eo_all/LogicalAll.cxx
+    src/eo_all/PhysicalAll.cxx
+    
+    src/eo_setsrs/LogicalSetSRS.cxx
+    src/eo_setsrs/PhysicalSetSRS.cxx
+    
+    src/eo_getsrs/LogicalGetSRS.cxx
+    src/eo_getsrs/PhysicalGetSRS.cxx
+    
+    src/eo_settrs/LogicalSetTRS.cxx
+    src/eo_settrs/PhysicalSetTRS.cxx
+    
+    
+    src/eo_gettrs/LogicalGetTRS.cxx
+    src/eo_gettrs/PhysicalGetTRS.cxx
+    
+    src/eo_arrays/LogicalArrays.cxx
+    src/eo_arrays/PhysicalArrays.cxx
+    
+    src/eo_regnewsrs/LogicalRegNewSRS.cxx
+    src/eo_regnewsrs/PhysicalRegNewSRS.cxx
+    
+    src/eo_extent/LogicalExtent.cxx
+    src/eo_extent/PhysicalExtent.cxx
+    
+    
+    src/eo_over/OverArray.cxx
+    src/eo_over/LogicalOver.cxx
+    src/eo_over/PhysicalOver.cxx
+    
+    src/eo_setmd/LogicalSetMD.cxx
+    src/eo_setmd/PhysicalSetMD.cxx
+    
+    src/eo_getmd/LogicalGetMD.cxx
+    src/eo_getmd/PhysicalGetMD.cxx
+    
+    src/eo_cpsrs/LogicalCpSRS.cxx
+    src/eo_cpsrs/PhysicalCpSRS.cxx 
+	
+    src/PostgresWrapper.cxx
+    src/AffineTransform.cxx
+    src/TemporalReference.cxx
+    
+    src/ErrorCodes.cxx
+)
+
+file(GLOB scidb4geo_include "*.h")
+add_library(scidb4geo SHARED ${scidb4geo_src} ${scidb4geo_include} )
+include_directories(${CMAKE_CURRENT_LIST_DIR}/src/extern)
+
+
+
+# Dependencies
+
+
+
+
+
+
+
+
+
+
+
+
+find_package(CURL REQUIRED)
+if (CURL_FOUND)
+  include_directories(${CURL_INCLUDE_DIRS})
+  target_link_libraries(scidb4geo ${CURL_LIBRARIES})
+  message(STATUS "CURL libraries and headers found")
+endif (CURL_FOUND)
+
+
+
+
+
+# libpqxx 
+
+find_library(PQXX_LIBRARY
+  NAMES libpqxx pqxx
+  PATHS
+    ${CMAKE_INSTALL_PREFIX}
+    /usr/local/pgsql
+    /usr/local
+    /usr
+  PATH_SUFFIXES
+    lib
+  NO_DEFAULT_PATH
+)
+if (NOT PQXX_LIBRARY) 
+  message(FATAL_ERROR "libpqxx library not found!")
+else (NOT PQXX_LIBRARY) 
+  target_link_libraries (scidb4geo ${PQXX_LIBRARY}) # Is this needed? should be in default lib path
+endif (NOT PQXX_LIBRARY)
+
+find_path(PQXX_INCLUDE_DIR
+  NAMES pqxx/pqxx
+  PATHS
+    ${CMAKE_INSTALL_PREFIX}
+    /usr/local/pgsql
+    /usr/local
+    /usr
+  PATH_SUFFIXES
+    include
+  NO_DEFAULT_PATH
+)
+if (NOT PQXX_INCLUDE_DIR) 
+  message(FATAL_ERROR "libpqxx library not found!")
+else (NOT PQXX_INCLUDE_DIR) 
+  include_directories (${PQXX_INCLUDE_DIR}) # Is this needed? should be in default include path
+endif (NOT PQXX_INCLUDE_DIR)
+
+message(STATUS "libpqxx libraries and headers found")
+
+
+
+
+
+
+# SciDB
+find_package(SciDB REQUIRED)
+if (SciDB_FOUND)
+  include_directories(${SciDB_INCLUDE_DIRS})
+  target_link_libraries (scidb4geo ${SciDB_LIBRARIES})
+  message(STATUS "SciDB libraries and headers found")
+endif (SciDB_FOUND)
+
+
+
+# Boost
+set (BOOST_ROOT ${SciDB_ROOT}/3rdparty/boost)
+find_package(Boost REQUIRED COMPONENTS system thread)
+if (Boost_FOUND)
+  include_directories(${Boost_INCLUDE_DIRS})
+  target_link_libraries (scidb4geo ${Boost_LIBRARIES})
+  message(STATUS "Boost libraries and headers found")
+endif (Boost_FOUND)
+
+
+
+# Log4xx
+find_library(Log4cxx_LIBRARY  NAMES log4cxx
+  PATHS  
+    /usr /usr/local ${SciDB_ROOT}
+  PATH_SUFFIXES
+    lib
+)   
+if (NOT Log4cxx_LIBRARY) 
+  message(FATAL_ERROR "Log4cxx library not found!")
+else (NOT Log4cxx_LIBRARY) 
+  target_link_libraries (scidb4geo ${Log4cxx_LIBRARY}) # Is this needed? should be in default lib path
+endif (NOT Log4cxx_LIBRARY)
+
+
+
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wextra -Wall -Wno-unused-parameter -Wno-variadic-macros -Wno-strict-aliasing -Wno-long-long -Wno-unused -fPIC -D_STDC_FORMAT_MACROS -Wno-system-headers -isystem -O3 -g -DNDEBUG -D_STDC_LIMIT_MACROS")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -DCPP11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I. -I./src/extern -DPROJECT_ROOT=\\\"${SciDB_ROOT}\\\" -I\"${SciDB_ROOT}/3rdparty/boost/include/\" -I\"${SciDB_ROOT}/include\"")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -shared -Wl,-soname,libscidb4geo.so -L. -L\"${SciDB_ROOT}/3rdparty/boost/lib\" -L\"${SciDB_ROOT}/lib\" -Wl,-rpath,${SciDB_ROOT}/lib:${CMAKE_INSTALL_RPATH} -lm")
+
+
+
+
+
+#set(CMAKE_SKIP_BUILD_RPATH FALSE)
+#set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+#set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+#set(CMAKE_INSTALL_RPATH "${SciDB_ROOT}/lib/scidb/plugins")
+#set(CMAKE_SHARED_LINKER_FLAGS  "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--enable-new-dtags")
+
+
+
+
+#set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+#set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+#set(CMAKE_INSTALL_RPATH "$ORIGIN/../plugins:$ORIGIN/../lib:$ORIGIN/../../")
+#set_property(TARGET scidb4geo PROPERTY CXX_STANDARD_REQUIRED ON)
+#set_property(TARGET scidb4geo PROPERTY CXX_STANDARD 14)
+
+set_target_properties(scidb4geo PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${SciDB_ROOT}/lib/scidb/plugins)
+get_target_property(OUTPUT_SCIDB scidb4geo LOCATION)
+add_custom_command(TARGET scidb4geo POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${OUTPUT_SCIDB} ${CMAKE_CURRENT_LIST_DIR}/install/.  COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_CURRENT_LIST_DIR} tar "cfz" "scidb4geo_bin.tar.gz" install/ ) # copy shared library not only to scidb plugins path but also to the plugins dev path for binary packaging
+
+
+ 

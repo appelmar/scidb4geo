@@ -34,7 +34,8 @@ eo_setsrs(world,'lon','lat','EPSG',4326,'x0=-180 y0=90 a11=0.1 a22=-0.1');
 
 
 ###Notes
-The plugin comes with standard EPSG definitions. However, to use custom reference systems, you may add proj4 and wkt definitions using `eo_regnewsrs()`.
+The plugin comes with standard EPSG definitions. If the combination of authority name and id cannot be found internally, the plugin checks [spatialreference.org](http://spatialreference.org) and automatically adds the system to the catalog if available.
+Otherwise, you may add proj4 and wkt definitions manually using `eo_regnewsrs()`.
 
 ###Author(s)
 Marius Appel - <marius.appel@uni-muenster.de>

@@ -8,8 +8,8 @@
 #define SCIDB_MAXDIMINDEX 4611686018427387903
 
 
-#ifndef PROJECT_ROOT // Must be set manually if compiling outside SciDB 
-#define PROJECT_ROOT "${CMAKE_CURRENT_LIST_DIR}"
-#endif
+//#ifndef PROJECT_ROOT // Must be set manually if compiling outside SciDB 
+//#define PROJECT_ROOT "${CMAKE_CURRENT_LIST_DIR}"
+//#endif
 
 #endif

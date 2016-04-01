@@ -23,8 +23,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <SciDBAPI.h>
 #include <system/Constants.h>
-#include <util/PluginManager.h>
-#include <query/Parser.h>
+//#include <util/PluginManager.h>
+//#include <query/Parser.h>
 
 
 

@@ -1,10 +1,7 @@
 
 CMakeCache.txt
 CMakeFiles
-Makefile
-cmake_install.cmake
 install_manifest.txt
-
 *.slo
 *.lo
 *.o
@@ -28,4 +25,5 @@ examples/R/sample.tif.aux.xml
 doc/operators/*.html
 doc/operators/.Rhistory
 install/libscidb4geo.so
+libscidb4geo.so
 scidb4geo_bin.tar.gz

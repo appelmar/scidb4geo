@@ -38,7 +38,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "query/Operator.h"
 #include "array/Metadata.h"
 #include "OverArray.h"
-#include "query/ops/input/InputArray.h"
+//#include "query/ops/input/InputArray.h"
 
 using namespace std;
 using namespace boost;

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # scidb4geo - A SciDB plugin for managing spatially referenced arrays
-# Copyright (C) 2015 Marius Appel <marius.appel@uni-muenster.de>
+# Copyright (C) 2016 Marius Appel <marius.appel@uni-muenster.de>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -22,28 +22,34 @@
 # Pars:
 # - $1 scidbconfig file for extracting postgres connection information, plugins dir, etc.
 
-if [ -z "$1" ]; then
-  echo -e "ERROR: Path to SciDB configuration file not provided\nUsage: setup config_file\n";
-  exit;
-fi
 
 
 echo -e "-----------------"
 echo -e "Installation script for installing scidb4geo plugin from binaries. This script must run as root user."
 echo -e "-----------------"
 
+SCIDB_CONFIG=/opt/scidb/15.7/etc/config.ini
+if [ $# -gt 0 ]; then
+   SCIDB_CONFIG=$1
+fi
 
 
-SCIDB_CONFIG=$1
 if [ ! -f $SCIDB_CONFIG ]; then
-    echo -e "\nWARNING: SciDB config file '${SCIDB_CONFIG}' not found. "
+    echo -e "\nWARNING: SciDB config file '${SCIDB_CONFIG}' not found. Trying to find it at default locations."
     : ${SCIDB_INSTALL_PATH:=/opt/scidb/15.7}
     if [ ! -f ${SCIDB_INSTALL_PATH}/etc/config.ini ]; then
-      exit;
+      exit 1;
     else SCIDB_CONFIG=${SCIDB_INSTALL_PATH}/etc/config.ini
     fi
-    echo "Using '${SCIDB_CONFIG}' instead. "
 fi
+
+if [ ! -f $SCIDB_CONFIG ]; then
+	echo -e "\ERRROR: cannot find SciDB config file. Try ./setup.sh /path/to/config.ini"
+	exit 1
+fi
+
+echo "Using SciDB config file '${SCIDB_CONFIG}'. "
+
 
 
 echo -e "\nInstallation removes any previous installation including  existing geographic reference metadata."
@@ -111,12 +117,10 @@ su postgres -c "psql -d ${dbname} -c 'ALTER FUNCTION scidb4geo_proc_attribute_re
 su postgres -c "psql -d ${dbname} -c 'ALTER FUNCTION scidb4geo_proc_attribute_remove() OWNER TO ${dbuser}' 1> /dev/null"
 
 
-
-
-
 #su postgres -c "psql -d ${dbname} -c 'REASSIGN OWNED BY postgres TO ${dbuser}' 1> /dev/null"
 
-# For binary distribution, copy shared library to pluginsdir
+# Copy shared library to pluginsdir
+# Notice that this only copies the plugin to the local SciDB installation but not to remote servers of the cluster.
 if [ -f libscidb4geo.so ]; then
      echo -e "Copying plugin binary to ${pluginsdir}..."
      cp libscidb4geo.so ${pluginsdir}/
@@ -124,4 +128,4 @@ else
      echo -e "No binary libscidb4geo.so found. You need to copy it to the SciDB plugin directory manually!"
 fi
 
-echo -e "\n...DONE. Please now restart SciDB and run load_library('scidb4geo')."
+echo -e "\n...DONE. Please make sure to copy the plugin to all cluster nodes, then restart SciDB and run load_library('scidb4geo')."
