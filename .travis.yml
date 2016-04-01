@@ -3,7 +3,7 @@ dist: trusty
 addons:
   apt:
     packages:
-    - gdebi 
+    - pandoc
 
 env:
   global:
