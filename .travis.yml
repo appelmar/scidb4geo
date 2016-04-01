@@ -9,5 +9,5 @@ env:
   global:
     - GH_REF: github.com/mappl/scidb4geo.git
     - secure: "hle+dLqlEZjBJGQQ5nGjhvfGmU4TOl1zTT/J4kWbK1zE42liP7yytgPPKWPi8TISgRQBz4wE8E7IbWUp6bC8QEDL5LtuaVg3LbTCfjq8qWu8nAptBTUoGpLp4gjb+0hwLnGqjkyder+MMwAuo3PzFzV6LhHUmLaGqCSPU0kDjkADol6aC0fh6moM0YHxSjGz09fGmQAUQZLgB+E2fY9jIIg6Yju4GKS9p7deDc9beimOhF3y+FIZrfZ5bDw9qIjRFnROsNds/Hnyyr95BF/mvz4PcQQoFhzQlDoBz3C7p/sA/UV/kGSaiIPyH274ST5GXUai0xxAJPJOk+VdiZwbjq/bGt3k1RqwvixetbW3ueRLtIwNImKC6eqkxcK+Sh/4roIO7pIkooIvMTtc0nIzlvY9b4P7dxSV5LtOqCXo1f5xKtzeFMdPv1pb84Z2R+xvtcVkyQrmY/hQTyKEvIg3525rLCX2c7Ll+EiafRgK5QkuLmPn3tzCKCa9kjrdbSEzJa9BE4gj+1r8m2n2vsfYq9LETUSmGe3tDT0eqhD5novvaury8dr4a7sbbeYBsZM2vCODiNTksKOz6wsuRnErfMesLkfy7efsS6fh+neSJMke27GoPl6hP0FzMSk+qrdF+1r5fBbkVkC6Q7iV4gdCQFkH0lFKF3gHYtGOItBVMUU="
-	
+
 script: chmod +x tools/make_doc.sh && tools/make_doc.sh
