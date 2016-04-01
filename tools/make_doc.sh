@@ -42,6 +42,7 @@ git init
 git config user.name "Travis CI Documentation Builder"
 git config user.email "marius.appel@uni-muenster.de"
 git add .
+git add operators
 git commit -m "Automated documentation build[ci skip]"
 git push --force --quiet "https://${GH_TOKEN}@${GH_REF}" master:gh-pages
 
