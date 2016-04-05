@@ -4,20 +4,6 @@ A SciDB plugin for managing spacetime earth-observation arrays.
 ## Description
 scidb4geo is a plugin for managing spatial and temporal reference information of SciDB arrays. It defines a couple of additional operators and adds actual reference information to SciDB's system catalog. It can be used within AFL or AQL. 
 
-## Operators
-The following operators are currently implemented:
-
-- `eo_arrays()` - returns a one-dimensional array containing all referenced arrays and their setting, i.e. whether its reference is spatial, temporal, vertical, or any combination.
-- `eo_getsrs(named_array)` - returns the spatial reference (as a single one-dimensional array tuple) of the given array
-- `eo_extent(named_array)` - returns the bounding box in SRS coordinates of a given array 
-- `eo_regnewsrs(auth_name, auth_srid, wktext, proj4text)` - registers a custom spatial reference system 
-- `eo_cpsrs(named_array, named_array)` - copies spatial reference information from one array to another
-- `eo_setsrs(named_array, xdim, ydim, auth_name, auth_srid, affine_transform)` - sets the spatial reference system of a given array, e.g. `AFL% eo_setsrs(a,'j','i','EPSG',4326,'x0=7.123 y0=52.023 a11=0.1 a22=0.1');`
-- `eo_gettrs(named_array)` - returns the temporal reference (as a single one-dimensional array tuple) of the given array
-- `eo_settrs(named_array, tdim, t0, dt)` - sets the temporal reference of a given array, e.g. `AFL% eo_settrs(a,'t','2015-01-01', 'P1D');`
-- `eo_setmd(named_array, [attribute], keys, values)` - sets key value metadata pairs for an array (attribute), keys and values may be comma separated strings to add multiple pairs. 
-- `eo_getmd(named_array)` - gets key value metadata pairs for an array 
-- `eo_over(named_array, named_array)` - for all cells of the first array, eo_over computes coordinates of the second array that are spatially or temporally overlying
 
 
 ## Getting Started
@@ -52,6 +38,25 @@ operators that will be demonstrated in a case study in the near future.
   ```
   remove(earth);
   ```
+
+
+
+
+## Operators
+The following operators are currently implemented:
+
+- `eo_arrays()` - returns a one-dimensional array containing all referenced arrays and their setting, i.e. whether its reference is spatial, temporal, vertical, or any combination.
+- `eo_getsrs(named_array)` - returns the spatial reference (as a single one-dimensional array tuple) of the given array
+- `eo_extent(named_array)` - returns the bounding box in SRS coordinates of a given array 
+- `eo_regnewsrs(auth_name, auth_srid, wktext, proj4text)` - registers a custom spatial reference system 
+- `eo_cpsrs(named_array, named_array)` - copies spatial reference information from one array to another
+- `eo_setsrs(named_array, xdim, ydim, auth_name, auth_srid, affine_transform)` - sets the spatial reference system of a given array, e.g. `AFL% eo_setsrs(a,'j','i','EPSG',4326,'x0=7.123 y0=52.023 a11=0.1 a22=0.1');`
+- `eo_gettrs(named_array)` - returns the temporal reference (as a single one-dimensional array tuple) of the given array
+- `eo_settrs(named_array, tdim, t0, dt)` - sets the temporal reference of a given array, e.g. `AFL% eo_settrs(a,'t','2015-01-01', 'P1D');`
+- `eo_setmd(named_array, [attribute], keys, values)` - sets key value metadata pairs for an array (attribute), keys and values may be comma separated strings to add multiple pairs. 
+- `eo_getmd(named_array)` - gets key value metadata pairs for an array 
+- `eo_over(named_array, named_array)` - for all cells of the first array, eo_over computes coordinates of the second array that are spatially or temporally overlying
+
 
 
 ## Build and Installation
