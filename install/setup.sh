@@ -66,6 +66,8 @@ echo -e "Create installation directory under ${HOME}/.scidb4geo ..."
 mkdir ${HOME}/.scidb4geo &> /dev/null # create directory for configuration files
 echo -e "Copying configuration file..."
 cp -f ${SCIDB_CONFIG} ${HOME}/.scidb4geo/config.ini # copy scidb configuration file
+mkdir ~scidb/.scidb4geo &> /dev/null 
+cp -f ${SCIDB_CONFIG} ~scidb/.scidb4geo/config.ini # copy scidb configuration file
 #cp -f scidb4geo_macro.afl ${HOME}/.scidb4geo/scidb4geo_macro.afl # copy macro
 
 echo -e "Extracting SciDB configuration parameters ..."
