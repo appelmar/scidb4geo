@@ -6,6 +6,21 @@ ifeq ($(SCIDB),)
   endif
 endif
 
+# Find SciDB at default locations
+ifeq ($(SCIDB),) 
+  ifneq ($(wildcard /opt/scidb/15.12/.*),)
+  SCIDB := /opt/scidb/15.12
+  else 
+  ifneq ($(wildcard /opt/scidb/15.7/.*),)
+  SCIDB := /opt/scidb/15.7
+  else 
+  ifneq ($(wildcard /opt/scidb/14.12/.*),)
+  SCIDB := /opt/scidb/14.12 
+  endif 
+  endif
+  endif
+endif
+
 # A way to set the 3rdparty prefix path that is convenient
 # for SciDB developers.
 ifeq ($(SCIDB_VER),)
@@ -40,7 +55,7 @@ else
   endif
 endif
 
-SRCS+= src/eo_all/LogicalAll.cxx src/eo_all/PhysicalAll.cxx
+#SRCS+= src/eo_all/LogicalAll.cxx src/eo_all/PhysicalAll.cxx
 SRCS+= src/eo_arrays/LogicalArrays.cxx src/eo_arrays/PhysicalArrays.cxx 
 SRCS+= src/eo_setsrs/LogicalSetSRS.cxx src/eo_setsrs/PhysicalSetSRS.cxx
 SRCS+= src/eo_getsrs/LogicalGetSRS.cxx src/eo_getsrs/PhysicalGetSRS.cxx
@@ -52,20 +67,28 @@ SRCS+= src/eo_over/OverArray.cxx src/eo_over/LogicalOver.cxx src/eo_over/Physica
 SRCS+= src/eo_setmd/LogicalSetMD.cxx src/eo_setmd/PhysicalSetMD.cxx
 SRCS+= src/eo_getmd/LogicalGetMD.cxx src/eo_getmd/PhysicalGetMD.cxx
 SRCS+= src/eo_cpsrs/LogicalCpSRS.cxx src/eo_cpsrs/PhysicalCpSRS.cxx 
+#SRCS+= src/eo_extend/ExtendArray.cxx src/eo_extend/LogicalExtend.cxx src/eo_extend/PhysicalExtend.cxx 
 SRCS+= src/PostgresWrapper.cxx src/AffineTransform.cxx src/TemporalReference.cxx src/ErrorCodes.cxx
 
-.PHONY: test package clean
+OBJECTS:=$(SRCS:.cxx=.o)
 
-all:
+.PHONY: test package clean install
+
+all: $(OBJECTS)
 	@if test ! -d "$(SCIDB)"; then echo  "Error. Try:\n\nmake SCIDB=<PATH TO SCIDB INSTALL PATH>"; exit 1; fi
-	$(CXX) $(CFLAGS) $(INC) -o libscidb4geo.so $(SRCS) $(LIBS)
+	$(CXX) $(CFLAGS) $(INC) -o libscidb4geo.so $(OBJECTS) $(LIBS)
 	@echo "BUILD successful."  
 	@echo "To install the scidb4geo plugin, the following steps are still needed:"
 	@echo "1. Run the install/setup.sh script as root user to update the system catalog"
 	@echo "2. Copy libscidb4geo.so to your SciDB lib/scidb/plugins directory ON ALL NODES IN YOUR CLUSTER and run"
 	@echo "iquery -aq \"load_library('scidb4geo')\" # to load the plugin afterwards."
 	@echo "3. Re-start SciDB if the plugin was already loaded previously."
-package: 
+	
+
+%.o: %.cxx
+	$(CXX) $(CFLAGS) $(INC) -c -o $@ $<
+
+package: all
 	@echo "Building .tar.gz installation archive..."
 	@if test ! -e "libscidb4geo.so"; then echo  "Error. Cannot find scidb4geo library, run make first."; exit 1; fi
 	cp libscidb4geo.so install/
@@ -74,6 +97,7 @@ package:
 test:
 	./test/test.sh
 clean:
-	rm -f *.so *.o
+	rm -f *.so $(OBJECTS)
 
-
+install:
+	cd install && chmod +x setup.sh && yes | ./setup.sh && cp  ../libscidb4geo.so "$(SCIDB)/lib/scidb/plugins"

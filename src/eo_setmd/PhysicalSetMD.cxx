@@ -88,7 +88,7 @@ namespace scidb4geo
             }
 
             map<string, string> kv;
-            for ( int i = 0; i < k.size(); ++i ) {
+            for ( unsigned int i = 0; i < k.size(); ++i ) {
                 kv.insert ( std::pair<string, string> ( k[i], v[i] ) );
             }
 
