@@ -43,7 +43,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "array/DBArray.h"
 #include "array/Metadata.h"
 #include "system/SystemCatalog.h"
-
 #include <log4cxx/logger.h>
 
 #include "../PostgresWrapper.h"
@@ -64,22 +63,18 @@ namespace scidb4geo
     public:
         PhysicalSetSRS ( const string &logicalName, const string &physicalName, const Parameters &parameters, const ArrayDesc &schema ) :
             PhysicalOperator ( logicalName, physicalName, parameters, schema ) {
-            _arrayName = ( ( std::shared_ptr<OperatorParamReference> & ) parameters[0] )->getObjectName();
+                
         }
 
 
+        
 
         virtual void preSingleExecute ( shared_ptr<Query> query ) {
-            if ( _schema.isTransient() ) {
-                shared_ptr<const InstanceMembership> membership ( Cluster::getInstance()->getInstanceMembership() );
-
-                if ( ( membership->getViewId() != query->getCoordinatorLiveness()->getViewId() ) ||
-                        ( membership->getInstances().size() != query->getInstancesCount() ) ) {
-
-                    throw USER_EXCEPTION ( SCIDB_SE_EXECUTION, SCIDB_LE_NO_QUORUM2 );
-                }
-            }
-
+            
+                 
+            shared_ptr<OperatorParamArrayReference> &arrayRef = ( shared_ptr<OperatorParamArrayReference> & ) _parameters[0];
+            query->getNamespaceArrayNames(arrayRef->getObjectName(), _namespaceName, _arrayName);
+            
             // Construct SRS object out of parameters
             AffineTransform A ( ( ( std::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[_parameters.size() - 1] )->getExpression()->evaluate().getString() ); // create affine transform based on string
             string auth_name = ( ( std::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[3] )->getExpression()->evaluate().getString();
@@ -88,13 +83,13 @@ namespace scidb4geo
             string dim_y = ( ( std::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[2] )->getExpression()->evaluate().getString();
 
 
-            // Check whether dimension exists
-//             ArrayID arrayId = SystemCatalog::getInstance()->findArrayByName ( _arrayName );
-//             std::shared_ptr<ArrayDesc> arrayDesc = SystemCatalog::getInstance()->getArrayDesc ( arrayId );
-	    
-	    ArrayDesc arrayDesc;
-	    SystemCatalog::getInstance()->getArrayDesc(_arrayName, query->getCatalogVersion(_arrayName), LAST_VERSION, arrayDesc);
-	    
+
+	   
+            ArrayID arrayID = query->getCatalogVersion(_namespaceName, _arrayName);
+            ArrayDesc arrayDesc;
+            SystemCatalog::getInstance()->getArrayDesc(arrayID, arrayDesc);
+   
+
             Dimensions dims = arrayDesc.getDimensions();
             bool dimOK_x = false;
             bool dimOK_y = false;
@@ -138,6 +133,7 @@ namespace scidb4geo
 
     private:
         string _arrayName;
+        string _namespaceName;
     };
 
     REGISTER_PHYSICAL_OPERATOR_FACTORY ( PhysicalSetSRS, "eo_setsrs", "PhysicalSetSRS" );

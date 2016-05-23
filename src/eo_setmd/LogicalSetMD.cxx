@@ -57,7 +57,10 @@ namespace scidb4geo
         LogicalSetMD ( const string &logicalName, const string &alias ) :
             LogicalOperator ( logicalName, alias ) {
 
-            ADD_PARAM_IN_ARRAY_NAME2 ( PLACEHOLDER_ARRAY_NAME_VERSION | PLACEHOLDER_ARRAY_NAME_INDEX_NAME ) // Arrayname will be stored in _parameters[0]
+            _properties.exclusive = true;
+            _properties.ddl = true;
+            
+            ADD_PARAM_IN_ARRAY_NAME ( ) // Arrayname will be stored in _parameters[0]
             ADD_PARAM_CONSTANT ( TID_STRING )
             ADD_PARAM_CONSTANT ( TID_STRING )
             ADD_PARAM_VARIES()
@@ -84,6 +87,8 @@ namespace scidb4geo
             assert ( _parameters[0]->getParamType() == PARAM_ARRAY_REF );
 
             ArrayDesc schema;
+            schema.setDistribution(defaultPartitioning());
+            schema.setResidency(query->getDefaultArrayResidency());
             return schema;
         }
 

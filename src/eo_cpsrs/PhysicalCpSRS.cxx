@@ -62,20 +62,29 @@ namespace scidb4geo
     public:
         PhysicalCpSRS ( const string &logicalName, const string &physicalName, const Parameters &parameters, const ArrayDesc &schema ) :
             PhysicalOperator ( logicalName, physicalName, parameters, schema ) {
-            _arrayNameFrom = ( ( std::shared_ptr<OperatorParamReference> & ) parameters[0] )->getObjectName();
-            _arrayNameTo = ( ( std::shared_ptr<OperatorParamReference> & ) parameters[1] )->getObjectName();
+           
         }
 
 
         virtual void preSingleExecute ( shared_ptr<Query> query ) {
-            if ( _schema.isTransient() ) {
-                shared_ptr<const InstanceMembership> membership ( Cluster::getInstance()->getInstanceMembership() );
+            
+            
+               
+            shared_ptr<OperatorParamArrayReference> &arrayRefFrom = ( shared_ptr<OperatorParamArrayReference> & ) _parameters[0];
+            shared_ptr<OperatorParamArrayReference> &arrayRefTo = ( shared_ptr<OperatorParamArrayReference> & ) _parameters[1];
 
-                if ( ( membership->getViewId() != query->getCoordinatorLiveness()->getViewId() ) ||
-                        ( membership->getInstances().size() != query->getInstancesCount() ) ) {
-                    throw USER_EXCEPTION ( SCIDB_SE_EXECUTION, SCIDB_LE_NO_QUORUM2 );
-                }
-            }
+            query->getNamespaceArrayNames(arrayRefFrom->getObjectName(), _namespaceNameFrom, _arrayNameFrom);
+            query->getNamespaceArrayNames(arrayRefTo->getObjectName(), _namespaceNameTo, _arrayNameTo);
+            
+            
+//             if ( _schema.isTransient() ) {
+//                 shared_ptr<const InstanceMembership> membership ( Cluster::getInstance()->getInstanceMembership() );
+// 
+//                 if ( ( membership->getViewId() != query->getCoordinatorLiveness()->getViewId() ) ||
+//                         ( membership->getInstances().size() != query->getInstancesCount() ) ) {
+//                     throw USER_EXCEPTION ( SCIDB_SE_EXECUTION, SCIDB_LE_NO_QUORUM2 );
+//                 }
+//             }
 
             // Get SRS info from existing array
             SpatialArrayInfo info = PostgresWrapper::instance()->dbGetSpatialRef ( _arrayNameFrom );
@@ -83,16 +92,17 @@ namespace scidb4geo
             // Array dimensions are currently matched by its name. They could also by matched by index number but
             // currently we think of the former to be more useful in practice, think of lat / lon as dimension names.
             // This means that the number of dimensions does NOT need to match, which is useful for e.g. aggregation
+           
+            ArrayID arrayIDFrom = query->getCatalogVersion(_namespaceNameFrom, _arrayNameFrom);
             ArrayDesc descFrom;
+            SystemCatalog::getInstance()->getArrayDesc(arrayIDFrom, descFrom);
+            
+            ArrayID arrayIDTo = query->getCatalogVersion(_namespaceNameTo, _arrayNameTo);
             ArrayDesc descTo;
+            SystemCatalog::getInstance()->getArrayDesc(arrayIDTo, descTo);
 
-//             SystemCatalog::getInstance()->getArrayDesc ( _arrayNameFrom, descFrom );
-//             SystemCatalog::getInstance()->getArrayDesc ( _arrayNameTo, descTo );
-// 	    
-	    
-	    SystemCatalog::getInstance()->getArrayDesc(_arrayNameFrom, query->getCatalogVersion(_arrayNameFrom), LAST_VERSION, descFrom);
-	    SystemCatalog::getInstance()->getArrayDesc(_arrayNameTo, query->getCatalogVersion(_arrayNameTo), LAST_VERSION, descTo);
 
+            
             Dimensions dimFrom = descFrom.getDimensions();
             Dimensions dimTo = descTo.getDimensions();
 
@@ -143,8 +153,11 @@ namespace scidb4geo
 
     private:
         string _arrayNameFrom;
+        string _namespaceNameFrom;
         string _arrayNameTo;
+        string _namespaceNameTo;
     };
+
 
 
 

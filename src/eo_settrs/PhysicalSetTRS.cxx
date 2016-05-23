@@ -66,7 +66,7 @@ namespace scidb4geo
     public:
         PhysicalSetTRS ( const string &logicalName, const string &physicalName, const Parameters &parameters, const ArrayDesc &schema ) :
             PhysicalOperator ( logicalName, physicalName, parameters, schema ) {
-            _arrayName = ( ( std::shared_ptr<OperatorParamReference> & ) parameters[0] )->getObjectName();
+            
         }
 
 
@@ -74,16 +74,18 @@ namespace scidb4geo
 
         virtual void preSingleExecute ( shared_ptr<Query> query ) {
 
+            shared_ptr<OperatorParamArrayReference> &arrayRef = ( shared_ptr<OperatorParamArrayReference> & ) _parameters[0];
+            query->getNamespaceArrayNames(arrayRef->getObjectName(), _namespaceName, _arrayName);
 
-            if ( _schema.isTransient() ) {
-                shared_ptr<const InstanceMembership> membership ( Cluster::getInstance()->getInstanceMembership() );
-
-                if ( ( membership->getViewId() != query->getCoordinatorLiveness()->getViewId() ) ||
-                        ( membership->getInstances().size() != query->getInstancesCount() ) ) {
-
-                    throw USER_EXCEPTION ( SCIDB_SE_EXECUTION, SCIDB_LE_NO_QUORUM2 );
-                }
-            }
+//             if ( _schema.isTransient() ) {
+//                 shared_ptr<const InstanceMembership> membership ( Cluster::getInstance()->getInstanceMembership() );
+// 
+//                 if ( ( membership->getViewId() != query->getCoordinatorLiveness()->getViewId() ) ||
+//                         ( membership->getInstances().size() != query->getInstancesCount() ) ) {
+// 
+//                     throw USER_EXCEPTION ( SCIDB_SE_EXECUTION, SCIDB_LE_NO_QUORUM2 );
+//                 }
+//             }
 
             // Construct SRS object out of parameters
 
@@ -93,10 +95,10 @@ namespace scidb4geo
 
 
             // Check whether dimension exists
-	    ArrayDesc arrayDesc;
-	    SystemCatalog::getInstance()->getArrayDesc(_arrayName , query->getCatalogVersion(_arrayName ), LAST_VERSION, arrayDesc);
-//             ArrayID arrayId = SystemCatalog::getInstance()->findArrayByName ( _arrayName );
-//             std::shared_ptr<ArrayDesc> arrayDesc = SystemCatalog::getInstance()->getArrayDesc ( arrayId );
+            ArrayID arrayID = query->getCatalogVersion(_namespaceName, _arrayName);
+            ArrayDesc arrayDesc;
+            SystemCatalog::getInstance()->getArrayDesc(arrayID, arrayDesc);
+
             Dimensions dims = arrayDesc.getDimensions();
             bool dimOK = false;
             for ( size_t i = 0; i < dims.size(); ++i ) {
@@ -135,6 +137,7 @@ namespace scidb4geo
 
     private:
         string _arrayName;
+        string _namespaceName;
     };
 
     REGISTER_PHYSICAL_OPERATOR_FACTORY ( PhysicalSetTRS, "eo_settrs", "PhysicalSetTRS" );

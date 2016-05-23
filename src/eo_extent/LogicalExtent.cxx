@@ -106,7 +106,11 @@ namespace scidb4geo
 
             vector<DimensionDesc> dimensions ( 1 );
             dimensions[0] = DimensionDesc ( "i", 0, 0, 0, 0, 255, 0 );
-            return ArrayDesc ( "Extent", attributes, dimensions, defaultPartitioning()  );
+            stringstream ss;
+            ss << query->getInstanceID();
+            ArrayDistPtr localDist = ArrayDistributionFactory::getInstance()->construct(psLocalInstance, DEFAULT_REDUNDANCY,ss.str());
+            return ArrayDesc ( "Extent", attributes, dimensions, localDist,  query->getDefaultArrayResidency());   
+
         }
 
     };

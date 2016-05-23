@@ -55,7 +55,7 @@ namespace scidb4geo
 
         virtual RedistributeContext getOutputDistribution ( const std::vector<RedistributeContext> &inputDistributions,
                 const std::vector< ArrayDesc> &inputSchemas ) const {
-            return RedistributeContext ( psHashPartitioned );
+            return RedistributeContext(_schema.getDistribution(),_schema.getResidency());
         }
 
 

@@ -62,7 +62,7 @@ namespace scidb4geo
 
         virtual RedistributeContext getOutputDistribution ( const std::vector<RedistributeContext> &inputDistributions,
                 const std::vector< ArrayDesc> &inputSchemas ) const {
-            return RedistributeContext ( psLocalInstance );
+           return RedistributeContext(_schema.getDistribution(),_schema.getResidency());
         }
 
         void preSingleExecute ( std::shared_ptr<Query> query ) {

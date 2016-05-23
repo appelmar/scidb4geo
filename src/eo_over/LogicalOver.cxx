@@ -96,8 +96,11 @@ namespace scidb4geo
                                                      emptyTag->getDefaultValueExpr(),
                                                      emptyTag->getVarSize() ) );
             }
+            stringstream ss;
+            ss << query->getInstanceID();
+            ArrayDistPtr localDist = ArrayDistributionFactory::getInstance()->construct(psLocalInstance, DEFAULT_REDUNDANCY,ss.str());
+            return ArrayDesc ( "OverArray", outAttrs, dims, localDist,  query->getDefaultArrayResidency());   
 
-            return ArrayDesc ( "OverArray", outAttrs, dims, defaultPartitioning()  );
 
         }
     };

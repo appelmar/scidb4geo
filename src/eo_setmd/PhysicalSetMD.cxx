@@ -63,7 +63,19 @@ namespace scidb4geo
 
 
         virtual void preSingleExecute ( shared_ptr<Query> query ) {
-            string arrayName = ( ( std::shared_ptr<OperatorParamReference> & ) _parameters[0] )->getObjectName();
+            
+            
+                  
+            shared_ptr<OperatorParamArrayReference> &arrayRef = ( shared_ptr<OperatorParamArrayReference> & ) _parameters[0];
+            query->getNamespaceArrayNames(arrayRef->getObjectName(), _namespaceName, _arrayName);
+            ArrayID arrayID = query->getCatalogVersion(_namespaceName, _arrayName);
+            ArrayDesc arrayDesc;
+            SystemCatalog::getInstance()->getArrayDesc(arrayID, arrayDesc);
+            
+
+            
+            
+            
             string keys;
             string vals;
 
@@ -94,11 +106,11 @@ namespace scidb4geo
 
 
             if ( _parameters.size() == 3 ) {
-                PostgresWrapper::instance()->dbSetArrayMD ( arrayName, kv ); // TODO: Add domain
+                PostgresWrapper::instance()->dbSetArrayMD ( _arrayName, kv ); // TODO: Add domain
             }
             else if ( _parameters.size() == 4 ) {
                 string attrname = ( ( std::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[1] )->getExpression()->evaluate().getString();
-                PostgresWrapper::instance()->dbSetAttributeMD ( arrayName, attrname, kv ); // TODO: Add domain
+                PostgresWrapper::instance()->dbSetAttributeMD ( _arrayName, attrname, kv ); // TODO: Add domain
             }
 
         }
@@ -108,6 +120,9 @@ namespace scidb4geo
             return std::shared_ptr< Array>();
         }
 
+    private:
+        string _arrayName;
+        string _namespaceName;
 
     };
 

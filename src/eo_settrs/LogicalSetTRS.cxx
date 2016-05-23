@@ -85,9 +85,10 @@ namespace scidb4geo
         LogicalSetTRS ( const string &logicalName, const string &alias ) :
             LogicalOperator ( logicalName, alias ) {
 
+             _properties.exclusive = true;
+            _properties.ddl = true;
 
-
-            ADD_PARAM_IN_ARRAY_NAME2 ( PLACEHOLDER_ARRAY_NAME_VERSION | PLACEHOLDER_ARRAY_NAME_INDEX_NAME ) // Arrayname will be stored in _parameters[0]
+            ADD_PARAM_IN_ARRAY_NAME ( ) // Arrayname will be stored in _parameters[0]
             //ADD_PARAM_IN_DIMENSION_NAME()
             //ADD_PARAM_IN_DIMENSION_NAME()
             ADD_PARAM_CONSTANT ( TID_STRING ) // tdim as string
@@ -105,7 +106,6 @@ namespace scidb4geo
             assert ( _parameters.size() == 4 );
             assert ( _parameters[0]->getParamType() == PARAM_ARRAY_REF );
             shared_ptr<OperatorParamArrayReference> &arrayRef = ( shared_ptr<OperatorParamArrayReference> & ) _parameters[0];
-            assert ( arrayRef->getArrayName().find ( '@' ) == string::npos );
             assert ( arrayRef->getObjectName().find ( '@' ) == string::npos );
             if ( arrayRef->getVersion() == ALL_VERSIONS ) {
                 throw USER_QUERY_EXCEPTION ( SCIDB_SE_INFER_SCHEMA, SCIDB_LE_WRONG_ASTERISK_USAGE2, _parameters[0]->getParsingContext() );
@@ -113,6 +113,8 @@ namespace scidb4geo
 
 
             ArrayDesc schema;
+            schema.setDistribution(defaultPartitioning());
+            schema.setResidency(query->getDefaultArrayResidency());
             return schema;
         }
 

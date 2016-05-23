@@ -62,14 +62,24 @@ namespace scidb4geo
 
         virtual RedistributeContext getOutputDistribution ( const std::vector<RedistributeContext> &inputDistributions,
                 const std::vector< ArrayDesc> &inputSchemas ) const {
-            return RedistributeContext ( psLocalInstance );
+            return RedistributeContext(_schema.getDistribution(),_schema.getResidency());
         }
 
         void preSingleExecute ( std::shared_ptr<Query> query ) {
 
             vector<string> arrays ( _parameters.size() );
+            vector<string> namespaces ( _parameters.size() );
             for ( uint16_t i = 0; i < _parameters.size(); ++i ) {
-                arrays.push_back ( ArrayDesc::makeUnversionedName ( ( ( std::shared_ptr<OperatorParamReference> & ) _parameters[i] )->getObjectName() ) );
+                
+                
+                string arrayName;
+                string namespaceName;
+                std::shared_ptr<OperatorParamArrayReference> &arrayRef = ( std::shared_ptr<OperatorParamArrayReference> & ) _parameters[i];
+
+                query->getNamespaceArrayNames(arrayRef->getObjectName(), namespaceName, arrayName);
+                
+                arrays.push_back ( arrayName );
+                namespaces.push_back( namespaceName );
             }
             
             vector<SpatialArrayInfo> infolist = PostgresWrapper::instance()->dbGetSpatialRef ( arrays );

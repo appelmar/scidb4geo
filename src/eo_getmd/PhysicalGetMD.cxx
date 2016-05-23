@@ -62,19 +62,21 @@ namespace scidb4geo
 
         virtual RedistributeContext getOutputDistribution ( const std::vector<RedistributeContext> &inputDistributions,
                 const std::vector< ArrayDesc> &inputSchemas ) const {
-            return RedistributeContext ( psLocalInstance );
+            return RedistributeContext(_schema.getDistribution(),_schema.getResidency());
         }
 
         void preSingleExecute ( std::shared_ptr<Query> query ) {
 
             std::shared_ptr<TupleArray> tuples ( std::make_shared<TupleArray> ( _schema, _arena ) );
 
-            string arrayname = ArrayDesc::makeUnversionedName ( ( ( std::shared_ptr<OperatorParamReference> & ) _parameters[0] )->getObjectName() );
-	    ArrayDesc arrayDesc;
-	    SystemCatalog::getInstance()->getArrayDesc(arrayname, query->getCatalogVersion(arrayname), LAST_VERSION, arrayDesc);
-	    
-//             ArrayID arrayId = SystemCatalog::getInstance()->findArrayByName ( arrayname );
-//             std::shared_ptr<ArrayDesc> arrayDesc = SystemCatalog::getInstance()->getArrayDesc ( arrayId );
+            string arrayname;
+            string namespacename;
+            std::shared_ptr<OperatorParamArrayReference> &arrayRef = ( std::shared_ptr<OperatorParamArrayReference> & ) _parameters[0];
+            query->getNamespaceArrayNames(arrayRef->getObjectName(), namespacename, arrayname);
+            
+            ArrayID arrayID = query->getCatalogVersion(namespacename, arrayname);
+            ArrayDesc arrayDesc;
+            SystemCatalog::getInstance()->getArrayDesc(arrayID, arrayDesc);
 
 
             map<string, string> arraymd = PostgresWrapper::instance()->dbGetArrayMD ( arrayname ); // TODO: Add domain
@@ -102,7 +104,6 @@ namespace scidb4geo
 
                     tuples->appendTuple ( tuple );
                 }
-
             }
 
             if ( tuples->getNumberOfTuples() > 0 ) {

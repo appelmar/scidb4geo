@@ -64,7 +64,7 @@ namespace scidb4geo
 
         virtual RedistributeContext getOutputDistribution ( const std::vector<RedistributeContext> &inputDistributions,
                 const std::vector< ArrayDesc> &inputSchemas ) const {
-            return RedistributeContext ( psLocalInstance );
+            return RedistributeContext(_schema.getDistribution(),_schema.getResidency());
         }
 
 
@@ -73,15 +73,22 @@ namespace scidb4geo
         void preSingleExecute ( std::shared_ptr<Query> query ) {
 
 
-            const string &arrayName = ( ( std::shared_ptr<OperatorParamReference> & ) _parameters[0] )->getObjectName();
+            string arrayName;
+            string namespaceName;
+            std::shared_ptr<OperatorParamArrayReference> &arrayRef = ( std::shared_ptr<OperatorParamArrayReference> & ) _parameters[0];
+
+            query->getNamespaceArrayNames(arrayRef->getObjectName(), namespaceName, arrayName);
+            ArrayID arrayID = query->getCatalogVersion(namespaceName, arrayName);
+            ArrayDesc arrayDesc;
+            SystemCatalog::getInstance()->getArrayDesc(arrayID, arrayDesc);
+            
+ 
 
             vector<SpatialArrayInfo> info_s = PostgresWrapper::instance()->dbGetSpatialRef ( vector<string> ( 1, arrayName ) ) ;
             vector<TemporalArrayInfo> info_t = PostgresWrapper::instance()->dbGetTemporalRef ( vector<string> ( 1, arrayName ) ) ;
             // Add vertical...
 
-	    
-	    ArrayDesc arrayDesc;
-	    SystemCatalog::getInstance()->getArrayDesc(arrayName, query->getCatalogVersion(arrayName), LAST_VERSION, arrayDesc);
+	   
 	    
 	    
 //          ArrayID arrayId = SystemCatalog::getInstance()->findArrayByName ( arrayName );

@@ -38,10 +38,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "../plugin.h" // Must be first to define PROJECT_ROOT
 
 #include "log4cxx/logger.h"
-
+#include "../ErrorCodes.h"
 #include "query/Operator.h"
 #include "system/SystemCatalog.h"
 #include "system/Exceptions.h"
+#include <usr_namespace/Permissions.h>
 
 namespace scidb4geo
 {
@@ -90,16 +91,16 @@ namespace scidb4geo
     public:
         LogicalSetSRS ( const string &logicalName, const string &alias ) :
             LogicalOperator ( logicalName, alias ) {
-
-            
-            ADD_PARAM_IN_ARRAY_NAME2 ( PLACEHOLDER_ARRAY_NAME_VERSION | PLACEHOLDER_ARRAY_NAME_INDEX_NAME ) // Arrayname will be stored in _parameters[0]
+                
+            _properties.exclusive = true;
+            _properties.ddl = true;
+            ADD_PARAM_IN_ARRAY_NAME()
             //ADD_PARAM_IN_DIMENSION_NAME()
             //ADD_PARAM_IN_DIMENSION_NAME()
             ADD_PARAM_CONSTANT ( TID_STRING ) // xdim as string
             ADD_PARAM_CONSTANT ( TID_STRING ) // ydim as string
             ADD_PARAM_VARIES()
         }
-
 
 
         vector<std::shared_ptr<OperatorParamPlaceholder> > nextVaryParamPlaceholder ( const vector< ArrayDesc> &schemas ) {
@@ -134,17 +135,17 @@ namespace scidb4geo
             assert ( _parameters.size() == 5 || _parameters.size() == 6 );
             assert ( _parameters[0]->getParamType() == PARAM_ARRAY_REF );
             shared_ptr<OperatorParamArrayReference> &arrayRef = ( shared_ptr<OperatorParamArrayReference> & ) _parameters[0];
-            assert ( arrayRef->getArrayName().find ( '@' ) == string::npos );
             assert ( arrayRef->getObjectName().find ( '@' ) == string::npos );
             if ( arrayRef->getVersion() == ALL_VERSIONS ) {
                 throw USER_QUERY_EXCEPTION ( SCIDB_SE_INFER_SCHEMA, SCIDB_LE_WRONG_ASTERISK_USAGE2, _parameters[0]->getParsingContext() );
             }
 
-
             ArrayDesc schema;
+            schema.setDistribution(defaultPartitioning());
+            schema.setResidency(query->getDefaultArrayResidency());
             return schema;
         }
-
+        
     };
 
 

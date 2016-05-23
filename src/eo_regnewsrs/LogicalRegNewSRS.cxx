@@ -110,7 +110,11 @@ namespace scidb4geo
             size_t end    = nArrays > 0 ? nArrays - 1 : 0;
 
             dimensions[0] = DimensionDesc ( "srs", 0, 0, end, end, nArrays, 0 );
-            return ArrayDesc ( "SRS", attributes, dimensions, defaultPartitioning()  );
+            
+            stringstream ss;
+            ss << query->getInstanceID();
+            ArrayDistPtr localDist = ArrayDistributionFactory::getInstance()->construct(psLocalInstance, DEFAULT_REDUNDANCY,ss.str());
+            return ArrayDesc ( "SRS", attributes, dimensions, localDist,  query->getDefaultArrayResidency());   
         }
 
     };

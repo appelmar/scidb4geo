@@ -111,8 +111,10 @@ namespace scidb4geo
 
             dimensions[0] = DimensionDesc ( "i", 0, 0, end, end, nArrays, 0 );
 
-
-            return ArrayDesc ( "Temporal Array", attributes, dimensions, defaultPartitioning() );
+            stringstream ss;
+            ss << query->getInstanceID();
+            ArrayDistPtr localDist = ArrayDistributionFactory::getInstance()->construct(psLocalInstance, DEFAULT_REDUNDANCY,ss.str());
+            return ArrayDesc ( "Temporal Array", attributes, dimensions, localDist,  query->getDefaultArrayResidency());   
         }
 
     };

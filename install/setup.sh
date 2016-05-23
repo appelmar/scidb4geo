@@ -28,7 +28,7 @@ echo -e "-----------------"
 echo -e "Installation script for installing scidb4geo plugin from binaries. This script must run as root user."
 echo -e "-----------------"
 
-SCIDB_CONFIG=/opt/scidb/15.7/etc/config.ini
+SCIDB_CONFIG=/opt/scidb/15.12/etc/config.ini
 if [ $# -gt 0 ]; then
    SCIDB_CONFIG=$1
 fi
@@ -36,7 +36,7 @@ fi
 
 if [ ! -f $SCIDB_CONFIG ]; then
     echo -e "\nWARNING: SciDB config file '${SCIDB_CONFIG}' not found. Trying to find it at default locations."
-    : ${SCIDB_INSTALL_PATH:=/opt/scidb/15.7}
+    : ${SCIDB_INSTALL_PATH:=/opt/scidb/15.12}
     if [ ! -f ${SCIDB_INSTALL_PATH}/etc/config.ini ]; then
       exit 1;
     else SCIDB_CONFIG=${SCIDB_INSTALL_PATH}/etc/config.ini
