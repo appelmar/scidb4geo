@@ -67,7 +67,7 @@ The following instructions refer to using SciDB version 15.7 on Ubuntu 14.04. Yo
 Furthermore, the plugin requires [libcurl](http://curl.haxx.se/).
 
 1. Clone this repository `git clone https://github.com/mappl/scidb4geo`.
-2. Compile by running `make` in the base directory. If SciDB libraries and headers are installed at a nonstandard location, you may use `make /path/to/scidb`.
+2. Compile by running `make` in the base directory. If SciDB libraries and headers are installed at a nonstandard location, you may use `make SCIDB=/path/to/scidb`.
 3. Use the `install/setup.sh` script to extend SciDB's system catalog by running `cd install && chmod +x setup.sh && ./setup.sh` as the root user or with sudo rights.
 4. Copy `libscidb4geo.so` to the plugins directory of SciDB on **all instances**, i.e. `cp libscidb4geo.so /opt/scidb/15.7/lib/scidb/plugins/` for a default local SciDB installation.
 5. Now, you should be able to load the plugin using `AFL% load_library('scidb4geo');`
