@@ -27,7 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/ini_parser.hpp>
-
+#include <fstream>
 #include <curl/curl.h>
 
 
@@ -62,14 +62,60 @@ namespace scidb4geo
 
         // Assuming only one cluster definition in scidb config file
         cluster = pt.front().first;
-        dbuser = pt.get<string> ( "" + cluster + ".db_user", "postgres" );
-        dbpw = pt.get<string> ( "" + cluster + ".db_passwd", "postgres" );
-        pluginsdir = pt.get<string> ( "" + cluster + ".pluginsdir", pt.get<string> ( "" + cluster + ".install_root", "/opt/scidb/14.12" ) + "/lib/scidb/plugins" );
+        dbuser = pt.get<string> ( "" + cluster + ".db_user", "" );
+        dbpw = pt.get<string> ( "" + cluster + ".db_passwd", "" );
+       // pluginsdir = pt.get<string> ( "" + cluster + ".pluginsdir", pt.get<string> ( "" + cluster + ".install_root", "/opt/scidb/15.12" ) + "/lib/scidb/plugins" );
 
+        
+        /* If DB password is not set in SciDB config file, we try to find it in a .pgpass file */
+        if (dbpw.empty())
+        {
+            SCIDB4GEO_DEBUG ( "System catalog password missing in config file, trying to read from .pgpassfile. " );
+            string pgpassfile;
+            char* env = getenv("PGPASSFILE");
+            if (env != NULL) pgpassfile = env;
+            else {
+                env = getenv ( "HOME" );
+                if (env != NULL) pgpassfile = ((string)env) + "/.pgpass";
+            }
+            
+            string line;
+            ifstream pgpass_stream (pgpassfile);
+            if (pgpass_stream.is_open())
+            {
+                while ( getline (pgpass_stream, line) )
+                {
+                    if (!line.empty()) {
+                        if (line[0] == '#') continue; // Assuming no spaces
+                        vector <string> parts ;
+                        boost::split(parts,line,boost::is_any_of(":"));
+                        if (parts.size()==5) {
+                            if (parts[2].compare(cluster) == 0 && parts[3].compare(dbuser) == 0) {
+                                dbpw = parts[4];
+                                break;
+                            }
+                        }
+                    }
+                    
+                }
+                pgpass_stream.close();
+            }
+            else {
+               SCIDB4GEO_DEBUG ("Cannot open file " +pgpassfile );
+                
+            }
+            if (dbpw.empty()) {
+                 SCIDB4GEO_ERROR ( "Cannot find system catalog (Postgres) password neither in SciDB config file nor in .pgpass file.", SCIDB4GEO_ERR_POSTGRES_CONNECTION_FAILED );
+            }
+        }
+            
 
+        
+        
+        
         // Build connection string and connect
         stringstream constr;
-        constr << "host=localhost port=5432 dbname= " << cluster << " user=" << dbuser << " password=" << dbpw;
+        constr << "host=localhost port=5432 dbname=" << cluster << " user=" << dbuser << " password=" << dbpw;
         SCIDB4GEO_DEBUG ( "Connecting to Postgres catalog with connection string '" + constr.str() + "'" );
 
         try {
@@ -105,15 +151,15 @@ namespace scidb4geo
         pqxx::result r = txn.exec ( q.str() );
 
 
-	txn.commit();
+        txn.commit();
 
         // if #results = 0, throw exception unknown SRS
         // else if #nresults > 1 warning, take first
         // store returned ID
         if ( r.size() == 0 ) {
 
-	  // Avoid nested transactions
-	  
+          // Avoid nested transactions
+          
             //Try to lookup at spatialreference.org
             if ( !dbRegSRSFromSRORG ( auth_name, auth_srid ) ) {
                 stringstream serr;
@@ -122,7 +168,7 @@ namespace scidb4geo
                 return;
             }
             else {
-	      pqxx::work txn2 ( *_c );
+              pqxx::work txn2 ( *_c );
                 // Try once more...
                 SCIDB4GEO_DEBUG ( "Performing SQL query '" + q.str() + "'" );
                 r = txn2.exec ( q.str() );
@@ -144,7 +190,7 @@ namespace scidb4geo
 
         int srid = r[0][0].as<int>();
 
-	pqxx::work txn3 ( *_c );
+        pqxx::work txn3 ( *_c );
 
         // 2. make sure that refsys will be changed if already set
         // delete from scidb4geo_array_s where arrayname = ?1;
@@ -322,10 +368,10 @@ namespace scidb4geo
         using namespace std;
 
         // 1. Try to find SRS at spatialreference.org
-	
+        
         stringstream url_proj4, url_wkt;
-	string auth_name_lower = auth_name;
-	std::transform(auth_name_lower.begin(),auth_name_lower.end(), auth_name_lower.begin(), ::tolower);
+        string auth_name_lower = auth_name;
+        std::transform(auth_name_lower.begin(),auth_name_lower.end(), auth_name_lower.begin(), ::tolower);
         url_proj4 << "http://www.spatialreference.org/ref/" << auth_name_lower.c_str()  << "/" << auth_id << "/proj4/";
         url_wkt << "http://www.spatialreference.org/ref/" << auth_name_lower.c_str()  << "/" << auth_id << "/ogcwkt/";
 
@@ -347,7 +393,7 @@ namespace scidb4geo
 
             curl_easy_setopt ( curl_handle, CURLOPT_URL, url_proj4.str().c_str() );
             curl_easy_setopt ( curl_handle, CURLOPT_WRITEDATA, &proj4 );
-	    
+            
             ss.str ( "" );
             ss << "Performing HTTP GET " << url_proj4.str().c_str();
             SCIDB4GEO_DEBUG ( ss.str() );
@@ -385,11 +431,11 @@ namespace scidb4geo
             return false;
         }
 
-	stringstream ss;
+        stringstream ss;
         ss << "Sucessfully found SRS definition for '" << auth_name_lower.c_str() << ":" << auth_id << "' from spatialreference.org:\nPROJ4: " << proj4 << "\nWKT:" << wkt << "\n";
         SCIDB4GEO_DEBUG ( ss.str() );
-	
-	
+        
+        
         SRSInfo srs;
         srs.auth_name = auth_name;
         srs.auth_srid = auth_id;
@@ -843,4 +889,3 @@ namespace scidb4geo
 
 
 }
-

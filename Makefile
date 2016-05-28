@@ -1,8 +1,12 @@
-ifeq ($(SCIDB),) 
-  X := $(shell which scidb 2>/dev/null)
-  ifneq ($(X),)
-    X := $(shell dirname ${X})
-    SCIDB := $(shell dirname ${X})
+ifeq ($(SCIDB),)
+  ifneq ($(SCIDB_INSTALL_PATH),)
+    SCIDB := $(SCIDB_INSTALL_PATH)
+  else
+    X := $(shell which scidb 2>/dev/null)
+    ifneq ($(X),)
+      X := $(shell dirname ${X})
+      SCIDB := $(shell dirname ${X})
+    endif
   endif
 endif
 
@@ -99,5 +103,5 @@ test:
 clean:
 	rm -f *.so $(OBJECTS)
 
-install:
-	cd install && chmod +x setup.sh && yes | ./setup.sh && cp  ../libscidb4geo.so "$(SCIDB)/lib/scidb/plugins"
+install: 
+	cd install && chmod +x setup.sh && yes | ./setup.sh $(SCIDB)/etc/config.ini && cp  ../libscidb4geo.so "$(SCIDB)/lib/scidb/plugins"
