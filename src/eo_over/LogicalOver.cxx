@@ -61,20 +61,20 @@ namespace scidb4geo
             assert ( schemas.size() == 2 );
             assert ( _parameters.size() == 0 );
 
-            if ( ArrayDesc::makeUnversionedName ( schemas[0].getName() ).compare ( "" ) == 0 ||
-                    ArrayDesc::makeUnversionedName ( schemas[1].getName() ).compare ( "" ) == 0 ||
-                    ArrayDesc::makeUnversionedName ( schemas[0].getName() ).compare ( ArrayDesc::makeUnversionedName ( schemas[1].getName() ) ) == 0 ) {
-                SCIDB4GEO_ERROR ( "Operator works on two different persistent input arrays", SCIDB4GEO_ERR_INVALIDINPUT );
-            }
+//             if ( ArrayDesc::makeUnversionedName ( schemas[0].getName() ).compare ( "" ) == 0 ||
+//                     ArrayDesc::makeUnversionedName ( schemas[1].getName() ).compare ( "" ) == 0 ||
+//                     ArrayDesc::makeUnversionedName ( schemas[0].getName() ).compare ( ArrayDesc::makeUnversionedName ( schemas[1].getName() ) ) == 0 ) {
+//                 SCIDB4GEO_ERROR ( "Operator works on two different persistent input arrays", SCIDB4GEO_ERR_INVALIDINPUT );
+//             }
 
             // Check dimensions
             Dimensions const &dims = schemas[0].getDimensions();
 	   
-            for ( size_t i = 0, n = dims.size();  i < n; i++ ) {
-                if ( dims[i].isMaxStar()) {
-                    SCIDB4GEO_ERROR ( "Operator works only on bounded dimensions", SCIDB4GEO_ERR_INVALIDDIMENSION );
-                }
-            }
+//             for ( size_t i = 0, n = dims.size();  i < n; i++ ) {
+//                 if ( dims[i].isMaxStar()) {
+//                     SCIDB4GEO_ERROR ( "Operator works only on bounded dimensions", SCIDB4GEO_ERR_INVALIDDIMENSION );
+//                 }
+//             }
 
             Attributes outAttrs;
 

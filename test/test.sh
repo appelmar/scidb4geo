@@ -20,6 +20,7 @@
 
 TESTARRAY=scidb4geo_test_$( date +%Y%m%d_%H%M%S )
 iquery -anq "remove(${TESTARRAY});" > /dev/null 2>&1
+iquery -anq "load_library('scidb4geo');" > /dev/null 2>&1
 iquery -anq "store(build(<val:double>[lat=0:179,256,0,lon=0:359,256,0, t=0:31,16,0],1),${TESTARRAY});" > /dev/null 2>&1
 
 rm test.out > /dev/null 2>&1
