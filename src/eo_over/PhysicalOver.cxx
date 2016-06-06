@@ -53,11 +53,12 @@ namespace scidb4geo
             PhysicalOperator ( logicalName, physicalName, parameters, schema )
         { }
 
-        virtual RedistributeContext getOutputDistribution ( const std::vector<RedistributeContext> &inputDistributions,
-                const std::vector< ArrayDesc> &inputSchemas ) const {
-            return RedistributeContext ( psHashPartitioned );
+        virtual PhysicalBoundaries getOutputBoundaries(const std::vector<PhysicalBoundaries> & inputBoundaries, const std::vector< ArrayDesc> & inputSchemas) const
+        {
+            return inputBoundaries[0];
         }
-
+        
+ 
 
         std::shared_ptr<Array> execute ( vector< std::shared_ptr<Array> > &inputArrays, std::shared_ptr<Query> query ) {
             assert ( inputArrays.size() == 2 );

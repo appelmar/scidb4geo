@@ -61,6 +61,29 @@ echo "name,setting" > test.expected
 echo "'${TESTARRAY}','st'" >> test.expected
 if diff test.out test.expected > /dev/null 2>&1; then echo "eo_arrays()... successful"; else echo "eo_arrays()... failed"; fi
 
+# 7. eo_over
+TESTARRAY_TARGET=scidb4geo_test_A_$( date +%Y%m%d_%H%M%S )
+TESTARRAY_SRC=scidb4geo_test_B_$( date +%Y%m%d_%H%M%S )
+iquery -anq "remove(${TESTARRAY_TARGET});" > /dev/null 2>&1
+iquery -anq "remove(${TESTARRAY_SRC});" > /dev/null 2>&1
+iquery -anq "store(build(<val:double>[lat=0:179,256,0,lon=0:359,256,0, t=0:31,16,0],1),${TESTARRAY_TARGET});" > /dev/null 2>&1
+iquery -anq "store(build(<val:double>[lat=0:179,256,0,lon=0:359,256,0, t=0:31,16,0],1),${TESTARRAY_SRC});" > /dev/null 2>&1
+iquery -anq "eo_setsrs(${TESTARRAY_TARGET},'lon','lat','EPSG',4326,'x0=-180 y0=90 a11=1 a22=-1');" >  /dev/null 2>&1
+iquery -anq "eo_setsrs(${TESTARRAY_SRC},'lon','lat','EPSG',4326,'x0=-180 y0=90 a11=1 a22=-1');" >  /dev/null 2>&1
+iquery -anq "eo_settrs(${TESTARRAY_TARGET},'t','2016-01-01', 'P1D');" >  /dev/null 2>&1
+iquery -anq "eo_settrs(${TESTARRAY_SRC},'t','2016-01-01', 'P1D');" >  /dev/null 2>&1
+iquery -o csv:l -aq "between(eo_over(${TESTARRAY_SRC},${TESTARRAY_TARGET}),10,12,4, 10,12,4);" > test.out
+echo "over_x,over_y,over_t" > test.expected
+echo "12,10,4" >> test.expected
+if diff test.out test.expected > /dev/null 2>&1; then echo "eo_over()... successful"; else echo "eo_over()... failed"; fi
+
+
+
+echo "Cleaning up..."
+iquery -anq "remove(${TESTARRAY});" > /dev/null 2>&1
+iquery -anq "remove(${TESTARRAY_TARGET});" > /dev/null 2>&1
+iquery -anq "remove(${TESTARRAY_SRC});" > /dev/null 2>&1
+
 rm test.out > /dev/null 2>&1
 rm test.expected > /dev/null 2>&1
 

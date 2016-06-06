@@ -52,6 +52,7 @@ namespace scidb4geo
     public:
         LogicalOver ( const string &logicalName, const std::string &alias ) :
             LogicalOperator ( logicalName, alias ) {
+            _properties.tile = true;
             ADD_PARAM_INPUT()
             ADD_PARAM_INPUT()
         }
