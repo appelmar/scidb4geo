@@ -73,7 +73,7 @@ namespace scidb4geo
         /**
          * Constructor for parsing string representations
          */
-        AffineTransform ( const string &astr );
+        AffineTransform ( string astr );
 
         /**
          * Default destructor
@@ -81,11 +81,14 @@ namespace scidb4geo
         ~AffineTransform ( );
 
 
+        void deriveInv();
 
+        
+        
         /**
          * Creates a string representation
          */
-        string toString();
+        string toString() const;
 
         /**
          * Transformation parameters, _x0, _y0 represent translation. _a11,_a12,_a21,_a22 desribe the 2x2 transformation matrix
@@ -94,42 +97,42 @@ namespace scidb4geo
 
 
         /**
-          * Inverse transformation
-          */
-        AffineTransform *_inv;
+        * Inverse parameters
+        */
+        double _inv_a11, _inv_a12, _inv_a21, _inv_a22, _inv_x0, _inv_y0;
 
 
         /**
          * Checks whether an affine transformation is the identity function
          */
-        bool isIdentity();
+        bool isIdentity() const;
 
         /**
           * Applies transformation to given pointer
           */
-        double2 f ( const double2 &v );
+        //double2 f ( const double2 &v );
 
         /**
-              * Applies transformation to given pointer
+              * Applies transformation to given point
               */
-        void f ( const double2 &v_in, double2 &v_out );
+        void f ( double2 &v_in, double2 &v_out ) const;
 
-        void f ( double2 &v );
+        void f ( double2 &v ) const;
 
 
         /**
           * Applies inverse transformation to a given point
           */
-        double2 fInv ( const double2 &v );
+        //double2 fInv ( const double2 &v );
 
-        void fInv ( const double2 &v_in, double2 &v_out );
+        void fInv ( double2 &v_in, double2 &v_out ) const;
 
-        void fInv ( double2 &v );
+        void fInv ( double2 &v ) const;
 
         /**
-              * Computes the determinant of the linear transformation matrix (without translation)
-              */
-        double det();
+        * Computes the determinant of the linear transformation matrix (without translation)
+        */
+        double det() const;
     };
 
 

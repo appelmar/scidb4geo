@@ -39,11 +39,19 @@ namespace scidb4geo
     static log4cxx::LoggerPtr logger ( log4cxx::Logger::getLogger ( "scidb4geo.AffineTransform" ) );
 
 
-    AffineTransform::AffineTransform() : _x0 ( 0 ),  _y0 ( 0 ),  _a11 ( 1 ), _a22 ( 1 ), _a12 ( 0 ), _a21 ( 0 ), _inv ( NULL ) {}
-    AffineTransform::AffineTransform ( double x0, double y0 ) : _x0 ( x0 ),  _y0 ( y0 ),  _a11 ( 1 ), _a22 ( 1 ), _a12 ( 0 ), _a21 ( 0 ), _inv ( NULL ) {}
-    AffineTransform::AffineTransform ( double x0, double y0, double a11, double a22 ) : _x0 ( x0 ),  _y0 ( y0 ),  _a11 ( a11 ), _a22 ( a22 ), _a12 ( 0 ), _a21 ( 0 ), _inv ( NULL ) {}
-    AffineTransform::AffineTransform ( double x0, double y0, double a11, double a22, double a12, double a21 )  : _x0 ( x0 ),  _y0 ( y0 ), _a11 ( a11 ),  _a22 ( a22 ), _a12 ( a12 ), _a21 ( a21 ), _inv ( NULL )   {}
-    AffineTransform::AffineTransform ( const string &astr ) : _x0 ( 0 ),  _y0 ( 0 ),  _a11 ( 1 ), _a22 ( 1 ), _a12 ( 0 ), _a21 ( 0 ), _inv ( NULL )
+    AffineTransform::AffineTransform() : _x0 ( 0 ),  _y0 ( 0 ),  _a11 ( 1 ), _a22 ( 1 ), _a12 ( 0 ), _a21 ( 0 ) {
+        deriveInv();
+    }
+    AffineTransform::AffineTransform ( double x0, double y0 ) : _x0 ( x0 ),  _y0 ( y0 ),  _a11 ( 1 ), _a22 ( 1 ), _a12 ( 0 ), _a21 ( 0 )  {
+        deriveInv();
+    }
+    AffineTransform::AffineTransform ( double x0, double y0, double a11, double a22 ) : _x0 ( x0 ),  _y0 ( y0 ),  _a11 ( a11 ), _a22 ( a22 ), _a12 ( 0 ), _a21 ( 0 ) {
+        deriveInv();
+    }
+    AffineTransform::AffineTransform ( double x0, double y0, double a11, double a22, double a12, double a21 )  : _x0 ( x0 ),  _y0 ( y0 ), _a11 ( a11 ),  _a22 ( a22 ), _a12 ( a12 ), _a21 ( a21 )   {
+        deriveInv();
+    }
+    AffineTransform::AffineTransform ( string astr ) : _x0 ( 0 ),  _y0 ( 0 ),  _a11 ( 1 ), _a22 ( 1 ), _a12 ( 0 ), _a21 ( 0 )
     {
         vector<string> parts;
         boost::split ( parts, astr, boost::is_any_of ( ",; " ) );
@@ -70,21 +78,34 @@ namespace scidb4geo
                 }
             }
         }
+        deriveInv();
     }
 
 
     AffineTransform::~AffineTransform()
     {
 
-        if ( _inv ) {
-            _inv->_inv = NULL; // No recursive deletes!!!
-            delete _inv;
-            _inv = NULL;
+    }
+    
+    
+    void AffineTransform::deriveInv()
+    {    
+        double d = det();
+        if ( fabs ( d ) < __DBL_EPSILON__ ) {
+            SCIDB4GEO_ERROR ( "Affine transformation not invertible, det=0", SCIDB4GEO_ERR_SINGULARMATRIX );
         }
+        double d1 = 1 / d;
+        _inv_a11 = d1 * _a22;
+        _inv_a12 = d1 * ( -_a12 );
+        _inv_a21 = d1 * ( -_a21 );
+        _inv_a22 = d1 * _a11;
+        _inv_x0 = -_inv_a11 * _x0 + _inv_a12 * _y0;
+        _inv_y0 =  _inv_a21 * _x0 - _inv_a22 * _y0;
     }
 
-    string AffineTransform::toString()
-    {
+
+    string AffineTransform::toString() const
+    { 
         stringstream sstr;
         sstr << setprecision ( numeric_limits< double >::digits10 )
              << "x0" << "=" << _x0  << " "
@@ -97,27 +118,27 @@ namespace scidb4geo
     }
 
 
-    bool AffineTransform::isIdentity()
+    bool AffineTransform::isIdentity() const
     {
         return ( _a11 == 1 && _a12 == 0 && _a21 == 0 && _a22 == 1 && _x0 == 0 && _y0 == 0 );
     }
 
-    AffineTransform::double2 AffineTransform::f ( const double2 &v )
-    {
-        double2 result;
-        result.x = _x0 + _a11 * v.x + _a12 * v.y;
-        result.y = _y0 + _a21 * v.x + _a22 * v.y;
-        return result;
-    }
+//     AffineTransform::double2 AffineTransform::f ( const double2 &v )
+//     {
+//         double2 result;
+//         result.x = _x0 + _a11 * v.x + _a12 * v.y;
+//         result.y = _y0 + _a21 * v.x + _a22 * v.y;
+//         return result;
+//     }
 
-    void AffineTransform::f ( const AffineTransform::double2 &v_in, AffineTransform::double2 &v_out )
+    void AffineTransform::f ( AffineTransform::double2 &v_in, AffineTransform::double2 &v_out ) const
     {
         v_out.x = _x0 + _a11 * v_in.x + _a12 * v_in.y;
         v_out.y = _y0 + _a21 * v_in.x + _a22 * v_in.y;
     }
 
 
-    void AffineTransform::f ( AffineTransform::double2 &v )
+    void AffineTransform::f ( AffineTransform::double2 &v ) const
     {
         double x = v.x;
         v.x = _x0 + _a11 * v.x + _a12 * v.y;
@@ -127,78 +148,46 @@ namespace scidb4geo
 
 
 
-    AffineTransform::double2 AffineTransform::fInv ( const double2 &v )
-    {
-        if ( _inv == NULL ) {
-            double d = det();
-            if ( fabs ( d ) < __DBL_EPSILON__ ) {
-                SCIDB4GEO_ERROR ( "Affine transformation not invertible, det=0", SCIDB4GEO_ERR_SINGULARMATRIX );
-            }
-            double d1 = 1 / d;
-            double inv_a11 = d1 * _a22;
-            double inv_a12 = d1 * ( -_a12 );
-            double inv_a21 = d1 * ( -_a21 );
-            double inv_a22 = d1 * _a11;
-            double inv_x0 = - inv_a11 * _x0 + inv_a12 * _y0;
-            double inv_y0 =  inv_a21 * _x0 - inv_a22 * _y0;
+//     AffineTransform::double2 AffineTransform::fInv ( const double2 &v )
+//     {
+//         if ( _inv == NULL ) {
+//             double d = det();
+//             if ( fabs ( d ) < __DBL_EPSILON__ ) {
+//                 SCIDB4GEO_ERROR ( "Affine transformation not invertible, det=0", SCIDB4GEO_ERR_SINGULARMATRIX );
+//             }
+//             double d1 = 1 / d;
+//             double inv_a11 = d1 * _a22;
+//             double inv_a12 = d1 * ( -_a12 );
+//             double inv_a21 = d1 * ( -_a21 );
+//             double inv_a22 = d1 * _a11;
+//             double inv_x0 = - inv_a11 * _x0 + inv_a12 * _y0;
+//             double inv_y0 =  inv_a21 * _x0 - inv_a22 * _y0;
+// 
+//             _inv = new AffineTransform ( inv_x0, inv_y0, inv_a11, inv_a22, inv_a12, inv_a21 );
+//             SCIDB4GEO_DEBUG ( "Inv: " + _inv->toString() );
+//             _inv->_inv = this; // Prevent repreated computations of f, f-1, f, f-1, ... This is dangerous in destruction...
+//         }
+//         return _inv->f ( v );
+//     }
 
-            _inv = new AffineTransform ( inv_x0, inv_y0, inv_a11, inv_a22, inv_a12, inv_a21 );
-            SCIDB4GEO_DEBUG ( "Inv: " + _inv->toString() );
-            _inv->_inv = this; // Prevent repreated computations of f, f-1, f, f-1, ... This is dangerous in destruction...
-        }
-        return _inv->f ( v );
+
+    void AffineTransform::fInv ( AffineTransform::double2 &v_in, AffineTransform::double2 &v_out ) const
+    {
+        v_out.x = _inv_x0 + _inv_a11 * v_in.x + _inv_a12 * v_in.y;
+        v_out.y = _inv_y0 + _inv_a21 * v_in.x + _inv_a22 * v_in.y;
     }
 
-
-    void AffineTransform::fInv ( const AffineTransform::double2 &v_in, AffineTransform::double2 &v_out )
+    void AffineTransform::fInv ( AffineTransform::double2 &v ) const
     {
-        if ( _inv == NULL ) {
-            double d = det();
-            if ( fabs ( d ) < __DBL_EPSILON__ ) {
-                SCIDB4GEO_ERROR ( "Affine transformation not invertible, det=0", SCIDB4GEO_ERR_SINGULARMATRIX );
-            }
-            double d1 = 1 / d;
-            double inv_a11 = d1 * _a22;
-            double inv_a12 = d1 * ( -_a12 );
-            double inv_a21 = d1 * ( -_a21 );
-            double inv_a22 = d1 * _a11;
-            double inv_x0 = - inv_a11 * _x0 + inv_a12 * _y0;
-            double inv_y0 =  inv_a21 * _x0 - inv_a22 * _y0;
-
-            _inv = new AffineTransform ( inv_x0, inv_y0, inv_a11, inv_a22, inv_a12, inv_a21 );
-            SCIDB4GEO_DEBUG ( "Inv: " + _inv->toString() );
-            _inv->_inv = this; // Prevent repreated computations of f, f-1, f, f-1, ... This is dangerous in destruction...
-        }
-        _inv->f ( v_in, v_out );
-    }
-
-    void AffineTransform::fInv ( AffineTransform::double2 &v )
-    {
-        if ( _inv == NULL ) {
-            double d = det();
-            if ( fabs ( d ) < __DBL_EPSILON__ ) {
-                SCIDB4GEO_ERROR ( "Affine transformation not invertible, det=0", SCIDB4GEO_ERR_SINGULARMATRIX );
-            }
-            double d1 = 1 / d;
-            double inv_a11 = d1 * _a22;
-            double inv_a12 = d1 * ( -_a12 );
-            double inv_a21 = d1 * ( -_a21 );
-            double inv_a22 = d1 * _a11;
-            double inv_x0 = - inv_a11 * _x0 + inv_a12 * _y0;
-            double inv_y0 = inv_a21 * _x0 - inv_a22 * _y0;
-
-            _inv = new AffineTransform ( inv_x0, inv_y0, inv_a11, inv_a22, inv_a12, inv_a21 );
-            SCIDB4GEO_DEBUG ( "Inv: " + _inv->toString() );
-            _inv->_inv = this; // Prevent repreated computations of f, f-1, f, f-1, ... This is dangerous in destruction...
-        }
-
-        _inv->f ( v );
+        double x = v.x;
+        v.x = _inv_x0 + _inv_a11 * v.x + _inv_a12 * v.y;
+        v.y = _inv_y0 + _inv_a21 * x + _inv_a22 * v.y;
     }
 
 
 
 
-    double AffineTransform::det()
+    double AffineTransform::det() const
     {
         return _a11 * _a22 - _a12 * _a21;
     }

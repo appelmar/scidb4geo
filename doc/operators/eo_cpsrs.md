@@ -2,6 +2,8 @@
 
 Copies the spatial reference of a source array to a target array.
 
+**DEPRECATED** (use `eo_setsrs(target, source)` instead)
+
 ###Synopsis
 ```
 AFL% eo_cpsrs(source, target);

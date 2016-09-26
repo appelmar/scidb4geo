@@ -73,54 +73,63 @@ namespace scidb4geo
         void preSingleExecute ( std::shared_ptr<Query> query ) {
 
 
-            const string &arrayName = ( ( std::shared_ptr<OperatorParamReference> & ) _parameters[0] )->getObjectName();
-
-            vector<SpatialArrayInfo> info_s = PostgresWrapper::instance()->dbGetSpatialRef ( vector<string> ( 1, arrayName ) ) ;
-            vector<TemporalArrayInfo> info_t = PostgresWrapper::instance()->dbGetTemporalRef ( vector<string> ( 1, arrayName ) ) ;
-            // Add vertical...
-
-	    
-	    ArrayDesc arrayDesc;
-	    SystemCatalog::getInstance()->getArrayDesc(arrayName, query->getCatalogVersion(arrayName), LAST_VERSION, arrayDesc);
-	    
-	    
-//          ArrayID arrayId = SystemCatalog::getInstance()->findArrayByName ( arrayName );
-//          std::shared_ptr<ArrayDesc> arrayDesc = SystemCatalog::getInstance()->getArrayDesc ( arrayId );
-            Dimensions dims = arrayDesc.getDimensions();
-
-            int xdim_idx = -1;
-            int ydim_idx = -1;
-            int tdim_idx = -1;
-            // Add vertical...
-
-
-            if ( info_s.size() + info_t.size()  < 1 ) {
-                throw PLUGIN_USER_EXCEPTION ( "libscidb4geo", SCIDB_SE_UDO, scidb4geo::SCIDB4GEO_ERR_UNKNOWN_SRS ) << " Array '" << arrayName << "' does not have any spatial, temporal, or vertical reference.";
+           
+           
+            vector<string> arrays ( _parameters.size() );
+            for ( uint16_t i = 0; i < _parameters.size(); ++i ) {
+                arrays.push_back ( ArrayDesc::makeUnversionedName ( ( ( std::shared_ptr<OperatorParamReference> & ) _parameters[i] )->getObjectName() ) );
             }
+           
+            vector<SpatialArrayInfo> info_s = PostgresWrapper::instance()->dbGetSpatialRef ( arrays );
+            vector<TemporalArrayInfo> info_t = PostgresWrapper::instance()->dbGetTemporalRef ( arrays );
 
-            // Find dimensions
-            DimensionDesc d;
-            for ( size_t i = 0; i < dims.size(); ++i ) {
-                d = dims[i];
-                if ( info_s.size() == 1 ) {
-                    if ( d.getBaseName().compare ( info_s[0].xdim ) == 0 ) xdim_idx = i;
-                    else if ( d.getBaseName().compare ( info_s[0].ydim ) == 0 ) ydim_idx = i;
-                }
-                if ( info_t.size() == 1 ) {
-                    if ( d.getBaseName().compare ( info_t[0].tdim ) == 0 ) tdim_idx = i;
-                }
+            // Add vertical...
+            map<string, SpatialArrayInfo> srs_map;
+            map<string, TemporalArrayInfo> trs_map;
+            
+            
+            set<string> array_set;
+            for (int i = 0;i<info_s.size(); ++i) {
+                array_set.insert(info_s[i].arrayname);
+                srs_map.insert(std::pair<string, SpatialArrayInfo>(info_s[i].arrayname, info_s[i]));
+            }
+            for (int i = 0;i<info_t.size(); ++i) {
+                array_set.insert(info_t[i].arrayname);
+                trs_map.insert(std::pair<string, TemporalArrayInfo>(info_t[i].arrayname, info_t[i]));
+            }
+            
+            
+            std::shared_ptr<TupleArray> tuples ( std::make_shared<TupleArray> ( _schema, _arena ) );
+            
+            std::set<string>::iterator it;
+            for (it = array_set.begin(); it != array_set.end(); ++it)
+            {
+                ArrayDesc arrayDesc;
+                SystemCatalog::getInstance()->getArrayDesc(*it , query->getCatalogVersion(*it), LAST_VERSION, arrayDesc);
+                
+                int xdim_idx = -1;
+                int ydim_idx = -1;
+                int tdim_idx = -1;
                 // Add vertical...
-            }
+                
+                
+                Dimensions dims = arrayDesc.getDimensions();
+                
 
+                // Find dimensions
+                DimensionDesc d;
+                for ( size_t i = 0; i < dims.size(); ++i ) {
+                    d = dims[i];
+                    if ( srs_map.find(*it) !=  srs_map.end()) {
+                        if ( d.getBaseName().compare ( srs_map[*it].xdim ) == 0 ) xdim_idx = i;
+                        else if ( d.getBaseName().compare ( srs_map[*it].ydim ) == 0 ) ydim_idx = i;
+                    }
+                    if ( trs_map.find(*it) !=  trs_map.end() ) {
+                        if ( d.getBaseName().compare ( trs_map[*it].tdim ) == 0 ) tdim_idx = i;
+                    }
+                    // Add vertical...
+                }
 
-
-            if ( ( ( xdim_idx < 0 || ydim_idx < 0 ) && info_s.size() > 0 ) ||
-                    ( tdim_idx < 0  && info_t.size() > 0 ) ) { // Add vertical...
-                stringstream serr;
-                serr << "One or more referenced dimensions of array '" << arrayName << "' do not exist.";
-                SCIDB4GEO_ERROR ( serr.str(), SCIDB4GEO_ERR_INCONSISTENT_DBSTATE );
-                return;
-            }
 
             Coordinates lowBoundary = SystemCatalog::getInstance()->getLowBoundary ( arrayDesc.getId() );
             Coordinates highBoundary = SystemCatalog::getInstance()->getHighBoundary ( arrayDesc.getId() );
@@ -139,24 +148,28 @@ namespace scidb4geo
             }
 
 
-            std::shared_ptr<TupleArray> tuples ( std::make_shared<TupleArray> ( _schema, _arena ) );
             Value tuple[10];
-            tuple[0].setString ( arrayName );
+            tuple[0].setString ( *it );
             stringstream setting;
 
 
-            if ( info_s.size() == 1 ) {
+            if (srs_map.find(*it) !=  srs_map.end()) {
                 setting << "s";
                 // Transform all 4 corners
-                stringstream sd;
-                sd << "Bounds X:(" << lowBoundary[xdim_idx] << "," << highBoundary[xdim_idx] << ")\n";
-                sd << "Bounds Y:(" << lowBoundary[ydim_idx] << "," << highBoundary[ydim_idx] << ")\n";
-                SCIDB4GEO_DEBUG ( sd.str() );
+                //stringstream sd;
+                //sd << "Bounds X:(" << lowBoundary[xdim_idx] << "," << highBoundary[xdim_idx] << ")\n";
+                //sd << "Bounds Y:(" << lowBoundary[ydim_idx] << "," << highBoundary[ydim_idx] << ")\n";
+                //SCIDB4GEO_DEBUG ( sd.str() );
 
-                AffineTransform::double2 ps1_world = info_s[0].A.f ( AffineTransform::double2 ( lowBoundary[xdim_idx],  lowBoundary[ydim_idx] ) );
-                AffineTransform::double2 ps2_world = info_s[0].A.f ( AffineTransform::double2 ( lowBoundary[xdim_idx],  highBoundary[ydim_idx] ) );
-                AffineTransform::double2 ps3_world = info_s[0].A.f ( AffineTransform::double2 ( highBoundary[xdim_idx], lowBoundary[ydim_idx] ) );
-                AffineTransform::double2 ps4_world = info_s[0].A.f ( AffineTransform::double2 ( highBoundary[xdim_idx], highBoundary[ydim_idx] ) );
+                AffineTransform::double2 ps1_world,ps2_world, ps3_world, ps4_world;
+                AffineTransform::double2 ps1( lowBoundary[xdim_idx],  lowBoundary[ydim_idx] );
+                AffineTransform::double2 ps2( lowBoundary[xdim_idx],  highBoundary[ydim_idx] );
+                AffineTransform::double2 ps3( highBoundary[xdim_idx], lowBoundary[ydim_idx] );
+                AffineTransform::double2 ps4( highBoundary[xdim_idx], highBoundary[ydim_idx] );
+                srs_map[*it].A.f (ps1,  ps1_world);
+                srs_map[*it].A.f (ps2,  ps2_world);
+                srs_map[*it].A.f (ps3,  ps3_world);
+                srs_map[*it].A.f (ps4,  ps4_world);
 
                 // Find minimum and maximum of transformed corners
                 double x[4] = {ps1_world.x, ps2_world.x, ps3_world.x, ps4_world.x};
@@ -170,22 +183,24 @@ namespace scidb4geo
                 tuple[5].setDouble ( upright.y );
             }
 
-            if ( info_t.size() == 1 ) {
+            if ( trs_map.find(*it) !=  trs_map.end() ) {
                 setting << "t";
                 stringstream sd;
                 sd << "Bounds T:(" << lowBoundary[tdim_idx] << "," << highBoundary[tdim_idx] << ")";
                 SCIDB4GEO_DEBUG ( sd.str() );
-                tuple[6].setString ( info_t[0].tref->datetimeAtIndex ( lowBoundary[tdim_idx] ).toStringISO() );
-                tuple[7].setString ( info_t[0].tref->datetimeAtIndex ( highBoundary[tdim_idx] ).toStringISO() );
-                delete info_t[0].tref;
+                tuple[6].setString ( trs_map[*it].tref->datetimeAtIndex ( lowBoundary[tdim_idx] ).toStringISO() );
+                tuple[7].setString ( trs_map[*it].tref->datetimeAtIndex ( highBoundary[tdim_idx] ).toStringISO() );
+                //delete info_t[0].tref;
 
             }
             // Add vertical...
 
             tuple[1].setString ( setting.str() );
             tuples->appendTuple ( tuple );
-
-
+               
+            
+            }
+                
             _result = tuples;
 
         }

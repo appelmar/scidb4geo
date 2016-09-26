@@ -43,7 +43,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 #define SCIDB4GEO_DEBUG(msg) \
-  log4cxx::Logger::getLogger ( SCIDB4GEO_LOGGERNAME )->debug ( msg );
+  log4cxx::Logger::getLogger ( SCIDB4GEO_LOGGERNAME )->debug ( msg ); 
 
 namespace scidb4geo
 {

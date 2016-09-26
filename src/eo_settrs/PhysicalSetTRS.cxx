@@ -87,10 +87,23 @@ namespace scidb4geo
 
             // Construct SRS object out of parameters
 
-            string dim_t = ( ( std::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[1] )->getExpression()->evaluate().getString();
-            string t0in = ( ( std::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[2] )->getExpression()->evaluate().getString();
-            string dtin = ( ( std::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[3] )->getExpression()->evaluate().getString();
+            TemporalArrayInfo trs;
+            
+            
+            if (_parameters.size() ==  2) {
+                trs = PostgresWrapper::instance()->dbGetTemporalRefOrEmpty(ArrayDesc::makeUnversionedName ( ( ( std::shared_ptr<OperatorParamReference> & ) _parameters[1] )->getObjectName() ));
+            }
+            else {
+                
+             trs.tdim  = ( ( std::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[1] )->getExpression()->evaluate().getString();
+             trs.tref = new TReference(( ( std::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[2] )->getExpression()->evaluate().getString(), 
+               (( std::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[3] )->getExpression()->evaluate().getString());
 
+
+            }
+            
+            
+           
 
             // Check whether dimension exists
 	    ArrayDesc arrayDesc;
@@ -100,7 +113,7 @@ namespace scidb4geo
             Dimensions dims = arrayDesc.getDimensions();
             bool dimOK = false;
             for ( size_t i = 0; i < dims.size(); ++i ) {
-                if ( dims[i].getBaseName().compare ( dim_t ) == 0 ) {
+                if ( dims[i].getBaseName().compare ( trs.tdim ) == 0 ) {
                     dimOK = true;
                     break;
                 }
@@ -108,22 +121,20 @@ namespace scidb4geo
 
             if ( !dimOK ) {
                 stringstream serr;
-                serr << "Dimension " << dim_t << " does not exist in target array.";
+                serr << "Dimension " << trs.tdim << " does not exist in target array.";
                 SCIDB4GEO_ERROR ( serr.str() , SCIDB4GEO_ERR_UNDECLARED_DIMENSION );
             }
 
 
 
-            TReference tref ( t0in, dtin );
-
             //TODO: Add some checks
 
-            // Add to system catalog
-            string t0 =  tref.getStart().toStringISO();
-            string dt = tref.getCellsize().toStringISO();
-            PostgresWrapper::instance()->dbSetTemporalRef ( _arrayName, dim_t, t0, dt );
+            
+            PostgresWrapper::instance()->dbSetTemporalRef ( _arrayName, trs.tdim, trs.tref->getStart().toStringISO(), trs.tref->getCellsize().toStringISO() );
 
 
+            
+            delete trs.tref;
 
         }
 

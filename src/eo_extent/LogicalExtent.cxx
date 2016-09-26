@@ -79,16 +79,21 @@ namespace scidb4geo
     public:
         LogicalExtent ( const string &logicalName, const std::string &alias ) :
             LogicalOperator ( logicalName, alias ) {
-            ADD_PARAM_IN_ARRAY_NAME()
+            ADD_PARAM_VARIES() // Expect a variable list of parameters (all named arrays)
         }
 
-
+        
+        vector<std::shared_ptr<OperatorParamPlaceholder> > nextVaryParamPlaceholder ( const vector< ArrayDesc> &schemas ) {
+            vector<std::shared_ptr<OperatorParamPlaceholder> > res;
+            res.push_back ( PARAM_IN_ARRAY_NAME() );
+            res.push_back ( END_OF_VARIES_PARAMS() );
+            return res;
+        }
 
 
         ArrayDesc inferSchema ( std::vector< ArrayDesc> inputSchemas, std::shared_ptr< Query> query ) {
             assert ( inputSchemas.size() == 0 );
-            assert ( _parameters.size() == 1 );
-
+           
 
 
             Attributes attributes ( 10 );
@@ -103,9 +108,14 @@ namespace scidb4geo
             attributes[8] = AttributeDesc ( ( AttributeID ) 8, "vmin", TID_DOUBLE,  AttributeDesc::IS_NULLABLE, 0 );
             attributes[9] = AttributeDesc ( ( AttributeID ) 9, "vmax", TID_DOUBLE,  AttributeDesc::IS_NULLABLE, 0 );
 
+            
+            size_t nArrays = _parameters.size();
+            if ( nArrays == 0 ) nArrays = ( size_t ) PostgresWrapper::instance()->dbGetArrayCount(); // TODO: Replace with dbGetRefCount();
 
+            size_t end    = nArrays > 0 ? nArrays - 1 : 0;
             vector<DimensionDesc> dimensions ( 1 );
-            dimensions[0] = DimensionDesc ( "i", 0, 0, 0, 0, 255, 0 );
+            dimensions[0] = DimensionDesc ( "i", 0, 0, end, end, nArrays, 0 );
+
             return ArrayDesc ( "Extent", attributes, dimensions, defaultPartitioning()  );
         }
 

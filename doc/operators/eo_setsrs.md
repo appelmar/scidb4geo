@@ -4,17 +4,19 @@ Sets the spatial reference of an existing array.
 
 ###Synopsis
 ```
-AFL% eo_setsrs(array, xdim, ydim, auth_name, auth_srid, A  );
+AFL% eo_setsrs(array_target, xdim, ydim, auth_name, auth_srid, A  );
+AFL% eo_setsrs(array_target, array_source );
 ```
 
-Argument      | Description 
---------      | ------------
-`array`       | Existing array
-`xdim`        | Name of the longitude / easting dimension as a string
-`ydim`        | Name of the latitude / northing dimension as a string
-`auth_name`   | String identifier of SRS authority, e.g. 'EPSG'
-`auth_srid`   | Integer ID of the reference system according to an authority, e.g. 4326
-`A`           | Affine transformation parameters as a string (see details below), e.g. 'x0=-180 y0=90 a11=0.1 a22=-0.1'
+Argument        | Description 
+--------        | ------------
+`array_target`  | Existing array whose spatial reference will be set
+`array_source`  | Existing array from which the spatial reference will be copied to the target array
+`xdim`          | Name of the longitude / easting dimension as a string
+`ydim`          | Name of the latitude / northing dimension as a string
+`auth_name`     | String identifier of SRS authority, e.g. 'EPSG'
+`auth_srid`     | Integer ID of the reference system according to an authority, e.g. 4326
+`A`             | Affine transformation parameters as a string (see details below), e.g. 'x0=-180 y0=90 a11=0.1 a22=-0.1'
 
 ###Result
 This is a data definition operator and won't return any results.

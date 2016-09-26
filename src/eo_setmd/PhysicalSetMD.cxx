@@ -84,7 +84,7 @@ namespace scidb4geo
             boost::split ( k, keys, boost::is_any_of ( ",;" ) );
             boost::split ( v, vals, boost::is_any_of ( ",;" ) );
             if ( k.size() != v.size() ) {
-                SCIDB4GEO_ERROR ( "Different namber of keys and values for metadata", SCIDB4GEO_ERR_UNKNOWN );
+                SCIDB4GEO_ERROR ( "Different number of keys and values for metadata", SCIDB4GEO_ERR_UNKNOWN );
             }
 
             map<string, string> kv;

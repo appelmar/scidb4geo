@@ -5,14 +5,16 @@ Sets the temporal reference of an existing array.
 ###Synopsis
 ```
 AFL% eo_settrs(array, tdim, t0, dt  );
+AFL% eo_settrs(array_target, array_source);
 ```
 
-Argument      | Description 
---------      | ------------
-`array`       | Existing array
-`tdim`        | Name of the temporal dimension as a string
-`t0`          | Datetime of the cell at t=0, i.e. the starting date given as a string according to ISO8601 e.g. '2015-02-05T12:04:11'
-`dt`          | Datetime interval of temprally neighbouring cells as a string according to ISO8601 for period, e.g. 'P16D or 'PT3H'
+Argument        | Description 
+--------        | ------------
+`array_target`  | Existing array whose temporal reference will be set
+`array_source`  | Existing array from which the temporal reference will be copied to the target array
+`tdim`          | Name of the temporal dimension as a string
+`t0`            | Datetime of the cell at t=0, i.e. the starting date given as a string according to ISO8601 e.g. '2015-02-05T12:04:11'
+`dt`            | Datetime interval of temprally neighbouring cells as a string according to ISO8601 for period, e.g. 'P16D or 'PT3H'
 
 ###Result
 This is a data definition operator and won't return any results.
