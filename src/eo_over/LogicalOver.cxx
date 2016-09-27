@@ -35,71 +35,67 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -----------------------------------------------------------------------------*/
 
-#include "query/Operator.h"
-#include "system/SystemCatalog.h"
-#include "system/Exceptions.h"
 #include "../ErrorCodes.h"
-
+#include "query/Operator.h"
+#include "system/Exceptions.h"
+#include "system/SystemCatalog.h"
 
 using namespace std;
 using namespace scidb;
 
-namespace scidb4geo
-{
+namespace scidb4geo {
 
-    class LogicalOver: public LogicalOperator
-    {
-    public:
-        LogicalOver ( const string &logicalName, const std::string &alias ) :
-            LogicalOperator ( logicalName, alias ) {
+    class LogicalOver : public LogicalOperator {
+       public:
+        LogicalOver(const string &logicalName, const std::string &alias) : LogicalOperator(logicalName, alias) {
+            _properties.tile = false;
             ADD_PARAM_INPUT()
             ADD_PARAM_INPUT()
         }
 
-        ArrayDesc inferSchema ( std::vector<ArrayDesc> schemas, std::shared_ptr<Query> query ) {
-            assert ( schemas.size() == 2 );
-            assert ( _parameters.size() == 0 );
+        ArrayDesc inferSchema(std::vector<ArrayDesc> schemas, std::shared_ptr<Query> query) {
+            assert(schemas.size() == 2);
+            assert(_parameters.size() == 0);
 
-            if ( ArrayDesc::makeUnversionedName ( schemas[0].getName() ).compare ( "" ) == 0 ||
-                    ArrayDesc::makeUnversionedName ( schemas[1].getName() ).compare ( "" ) == 0 ||
-                    ArrayDesc::makeUnversionedName ( schemas[0].getName() ).compare ( ArrayDesc::makeUnversionedName ( schemas[1].getName() ) ) == 0 ) {
-                SCIDB4GEO_ERROR ( "Operator works on two different persistent input arrays", SCIDB4GEO_ERR_INVALIDINPUT );
-            }
+            //             if ( ArrayDesc::makeUnversionedName ( schemas[0].getName() ).compare ( "" ) == 0 ||
+            //                     ArrayDesc::makeUnversionedName ( schemas[1].getName() ).compare ( "" ) == 0 ||
+            //                     ArrayDesc::makeUnversionedName ( schemas[0].getName() ).compare ( ArrayDesc::makeUnversionedName ( schemas[1].getName() ) ) == 0 ) {
+            //                 SCIDB4GEO_ERROR ( "Operator works on two different persistent input arrays", SCIDB4GEO_ERR_INVALIDINPUT );
+            //             }
 
             // Check dimensions
             Dimensions const &dims = schemas[0].getDimensions();
-	   
-            for ( size_t i = 0, n = dims.size();  i < n; i++ ) {
-                if ( dims[i].isMaxStar()) {
-                    SCIDB4GEO_ERROR ( "Operator works only on bounded dimensions", SCIDB4GEO_ERR_INVALIDDIMENSION );
-                }
-            }
+
+            //             for ( size_t i = 0, n = dims.size();  i < n; i++ ) {
+            //                 if ( dims[i].isMaxStar()) {
+            //                     SCIDB4GEO_ERROR ( "Operator works only on bounded dimensions", SCIDB4GEO_ERR_INVALIDDIMENSION );
+            //                 }
+            //             }
 
             Attributes outAttrs;
 
-//             outAttrs.push_back ( AttributeDesc ( ( AttributeID ) 0, ArrayDesc::makeUnversionedName(schemas[1].getName()) + ".x", TID_INT64, AttributeDesc::IS_NULLABLE, 0 ) ); // TODO: Change name to target dimension name?!
-//             outAttrs.push_back ( AttributeDesc ( ( AttributeID ) 1, ArrayDesc::makeUnversionedName(schemas[1].getName()) + ".y", TID_INT64, AttributeDesc::IS_NULLABLE, 0 ) ); // TODO: Change name to target dimension name?!
-            outAttrs.push_back ( AttributeDesc ( ( AttributeID ) 0, "over_x", TID_INT64, AttributeDesc::IS_NULLABLE, 0 ) ); // TODO: Change name to target dimension name?!
-            outAttrs.push_back ( AttributeDesc ( ( AttributeID ) 1, "over_y", TID_INT64, AttributeDesc::IS_NULLABLE, 0 ) ); // TODO: Change name to target dimension name?!
-            outAttrs.push_back ( AttributeDesc ( ( AttributeID ) 2, "over_t", TID_INT64, AttributeDesc::IS_NULLABLE, 0 ) ); // TODO: Change name to target dimension name?!
+            //             outAttrs.push_back ( AttributeDesc ( ( AttributeID ) 0, ArrayDesc::makeUnversionedName(schemas[1].getName()) + ".x", TID_INT64, AttributeDesc::IS_NULLABLE, 0 ) ); // TODO: Change name to target dimension name?!
+            //             outAttrs.push_back ( AttributeDesc ( ( AttributeID ) 1, ArrayDesc::makeUnversionedName(schemas[1].getName()) + ".y", TID_INT64, AttributeDesc::IS_NULLABLE, 0 ) ); // TODO: Change name to target dimension name?!
+            outAttrs.push_back(AttributeDesc((AttributeID)0, "over_x", TID_INT64, AttributeDesc::IS_NULLABLE, 0));  // TODO: Change name to target dimension name?!
+            outAttrs.push_back(AttributeDesc((AttributeID)1, "over_y", TID_INT64, AttributeDesc::IS_NULLABLE, 0));  // TODO: Change name to target dimension name?!
+            outAttrs.push_back(AttributeDesc((AttributeID)2, "over_t", TID_INT64, AttributeDesc::IS_NULLABLE, 0));  // TODO: Change name to target dimension name?!
 
-            if ( schemas[0].getEmptyBitmapAttribute() ) {
+            if (schemas[0].getEmptyBitmapAttribute()) {
                 AttributeDesc const *emptyTag = schemas[0].getEmptyBitmapAttribute();
-                outAttrs.push_back ( AttributeDesc ( ( AttributeID ) 3,
-                                                     emptyTag->getName(),
-                                                     emptyTag->getType(),
-                                                     emptyTag->getFlags(),
-                                                     emptyTag->getDefaultCompressionMethod(),
-                                                     emptyTag->getAliases(),
-                                                     emptyTag->getReserve(),
-                                                     &emptyTag->getDefaultValue(),
-                                                     emptyTag->getDefaultValueExpr(),
-                                                     emptyTag->getVarSize() ) );
+                outAttrs.push_back(AttributeDesc((AttributeID)3,
+                                                 emptyTag->getName(),
+                                                 emptyTag->getType(),
+                                                 emptyTag->getFlags(),
+                                                 emptyTag->getDefaultCompressionMethod(),
+                                                 emptyTag->getAliases(),
+                                                 emptyTag->getReserve(),
+                                                 &emptyTag->getDefaultValue(),
+                                                 emptyTag->getDefaultValueExpr(),
+                                                 emptyTag->getVarSize()));
             }
 
-            return ArrayDesc ( "OverArray", outAttrs, dims, defaultPartitioning()  );
-
+            return ArrayDesc("OverArray", outAttrs, dims, defaultPartitioning());
         }
     };
-    REGISTER_LOGICAL_OPERATOR_FACTORY ( LogicalOver, "eo_over" );
+    REGISTER_LOGICAL_OPERATOR_FACTORY(LogicalOver, "eo_over");
 }

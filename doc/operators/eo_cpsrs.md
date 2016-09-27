@@ -1,4 +1,4 @@
-##eo_settrs()
+##eo_cpsrs()
 
 Copies the spatial reference of a source array to a target array.
 

@@ -16,19 +16,15 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -----------------------------------------------------------------------------*/
 
-
 #ifndef AFFINE_TRANSFORM_H
 #define AFFINE_TRANSFORM_H
-
 
 #include <sstream>
 #include <string>
 
-namespace scidb4geo
-{
+namespace scidb4geo {
 
     using namespace std;
-
 
     /**
      * Affine transformations are used to map array integer coordinates to world SRS coordinates.
@@ -36,13 +32,11 @@ namespace scidb4geo
      * and provides basic serialization functions.
      * @see GDAL data model specification http://www.gdal.org/gdal_datamodel.html
      */
-    class AffineTransform
-    {
-    public:
-
+    class AffineTransform {
+       public:
         struct double2 {
-            double2() : x ( 0 ), y ( 0 ) {}
-            double2 ( double x, double y ) {
+            double2() : x(0), y(0) {}
+            double2(double x, double y) {
                 this->x = x;
                 this->y = y;
             }
@@ -58,33 +52,30 @@ namespace scidb4geo
         /**
          * Constructor for translation only
          */
-        AffineTransform ( double x0, double y0 );
+        AffineTransform(double x0, double y0);
 
         /**
          * Constructor for translation and scaling, no rotation, shear
         */
-        AffineTransform ( double x0, double y0, double a11, double a22 );
+        AffineTransform(double x0, double y0, double a11, double a22);
 
         /**
          * Constructor for specification of all parameters
          */
-        AffineTransform ( double x0, double y0, double a11, double a22, double a12, double a21 ) ;
+        AffineTransform(double x0, double y0, double a11, double a22, double a12, double a21);
 
         /**
          * Constructor for parsing string representations
          */
-        AffineTransform ( string astr );
+        AffineTransform(string astr);
 
         /**
          * Default destructor
          */
-        ~AffineTransform ( );
-
+        ~AffineTransform();
 
         void deriveInv();
 
-        
-        
         /**
          * Creates a string representation
          */
@@ -95,12 +86,10 @@ namespace scidb4geo
          */
         double _x0, _y0, _a11, _a22, _a12, _a21;
 
-
         /**
         * Inverse parameters
         */
         double _inv_a11, _inv_a12, _inv_a21, _inv_a22, _inv_x0, _inv_y0;
-
 
         /**
          * Checks whether an affine transformation is the identity function
@@ -115,30 +104,24 @@ namespace scidb4geo
         /**
               * Applies transformation to given point
               */
-        void f ( double2 &v_in, double2 &v_out ) const;
+        void f(double2 &v_in, double2 &v_out) const;
 
-        void f ( double2 &v ) const;
-
+        void f(double2 &v) const;
 
         /**
           * Applies inverse transformation to a given point
           */
         //double2 fInv ( const double2 &v );
 
-        void fInv ( double2 &v_in, double2 &v_out ) const;
+        void fInv(double2 &v_in, double2 &v_out) const;
 
-        void fInv ( double2 &v ) const;
+        void fInv(double2 &v) const;
 
         /**
         * Computes the determinant of the linear transformation matrix (without translation)
         */
         double det() const;
     };
-
-
-
-
 }
 
 #endif
-

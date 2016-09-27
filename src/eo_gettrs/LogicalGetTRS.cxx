@@ -35,17 +35,15 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -----------------------------------------------------------------------------*/
 
-#include "../plugin.h" // Must be first to define PROJECT_ROOT
+#include "../plugin.h"  // Must be first to define PROJECT_ROOT
 
+#include "array/Metadata.h"
 #include "query/Operator.h"
 #include "system/Exceptions.h"
-#include "array/Metadata.h"
 #include "system/SystemCatalog.h"
 
 #include "../PostgresWrapper.h"
-namespace scidb4geo
-{
-
+namespace scidb4geo {
 
     using namespace std;
     using namespace boost;
@@ -76,48 +74,41 @@ namespace scidb4geo
     *
     *
     */
-    class LogicalGetTRS: public LogicalOperator
-    {
-    public:
-        LogicalGetTRS ( const string &logicalName, const std::string &alias ) :
-            LogicalOperator ( logicalName, alias ) {
-            ADD_PARAM_VARIES() // Expect a variable list of parameters (all named arrays)
+    class LogicalGetTRS : public LogicalOperator {
+       public:
+        LogicalGetTRS(const string &logicalName, const std::string &alias) : LogicalOperator(logicalName, alias) {
+            ADD_PARAM_VARIES()  // Expect a variable list of parameters (all named arrays)
         }
 
-        vector<std::shared_ptr<OperatorParamPlaceholder> > nextVaryParamPlaceholder ( const vector< ArrayDesc> &schemas ) {
+        vector<std::shared_ptr<OperatorParamPlaceholder> > nextVaryParamPlaceholder(const vector<ArrayDesc> &schemas) {
             vector<std::shared_ptr<OperatorParamPlaceholder> > res;
-            res.push_back ( PARAM_IN_ARRAY_NAME() );
-            res.push_back ( END_OF_VARIES_PARAMS() );
+            res.push_back(PARAM_IN_ARRAY_NAME());
+            res.push_back(END_OF_VARIES_PARAMS());
             return res;
         }
 
+        ArrayDesc inferSchema(std::vector<ArrayDesc> inputSchemas, std::shared_ptr<Query> query) {
+            assert(inputSchemas.size() == 0);
 
-        ArrayDesc inferSchema ( std::vector< ArrayDesc> inputSchemas, std::shared_ptr< Query> query ) {
-            assert ( inputSchemas.size() == 0 );
-
-            Attributes attributes ( 6 );
-            attributes[0] = AttributeDesc ( ( AttributeID ) 0, "name", TID_STRING, 0, 0 );
-            attributes[1] = AttributeDesc ( ( AttributeID ) 1, "tdim", TID_STRING, 0, 0 );
-            attributes[2] = AttributeDesc ( ( AttributeID ) 2, "t0", TID_STRING, 0, 0 );
-            attributes[3] = AttributeDesc ( ( AttributeID ) 3, "dt", TID_STRING, 0, 0 );
-            attributes[4] = AttributeDesc ( ( AttributeID ) 4, "tMin", TID_STRING, 0, 0 );
-            attributes[5] = AttributeDesc ( ( AttributeID ) 5, "tMax", TID_STRING, 0, 0 );
+            Attributes attributes(6);
+            attributes[0] = AttributeDesc((AttributeID)0, "name", TID_STRING, 0, 0);
+            attributes[1] = AttributeDesc((AttributeID)1, "tdim", TID_STRING, 0, 0);
+            attributes[2] = AttributeDesc((AttributeID)2, "t0", TID_STRING, 0, 0);
+            attributes[3] = AttributeDesc((AttributeID)3, "dt", TID_STRING, 0, 0);
+            attributes[4] = AttributeDesc((AttributeID)4, "tMin", TID_STRING, 0, 0);
+            attributes[5] = AttributeDesc((AttributeID)5, "tMax", TID_STRING, 0, 0);
 
             size_t nArrays = _parameters.size();
-            if ( nArrays == 0 ) nArrays = ( size_t ) PostgresWrapper::instance()->dbGetTemporalRefCount();
-            size_t end    = nArrays > 0 ? nArrays - 1 : 0;
-            vector<DimensionDesc> dimensions ( 1 );
+            if (nArrays == 0) nArrays = (size_t)PostgresWrapper::instance()->dbGetTemporalRefCount();
+            size_t end = nArrays > 0 ? nArrays - 1 : 0;
+            vector<DimensionDesc> dimensions(1);
 
+            dimensions[0] = DimensionDesc("i", 0, 0, end, end, nArrays, 0);
 
-            dimensions[0] = DimensionDesc ( "i", 0, 0, end, end, nArrays, 0 );
-
-
-            return ArrayDesc ( "Temporal Array", attributes, dimensions, defaultPartitioning() );
+            return ArrayDesc("Temporal Array", attributes, dimensions, defaultPartitioning());
         }
-
     };
-    REGISTER_LOGICAL_OPERATOR_FACTORY ( LogicalGetTRS, "eo_gettrs" );
+    REGISTER_LOGICAL_OPERATOR_FACTORY(LogicalGetTRS, "eo_gettrs");
     typedef LogicalGetTRS LogicalGetTRS_depr;
-    REGISTER_LOGICAL_OPERATOR_FACTORY ( LogicalGetTRS_depr, "st_gettrs" ); // Backward compatibility
+    REGISTER_LOGICAL_OPERATOR_FACTORY(LogicalGetTRS_depr, "st_gettrs");  // Backward compatibility
 }
-

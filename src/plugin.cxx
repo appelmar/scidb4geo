@@ -16,7 +16,6 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -----------------------------------------------------------------------------*/
 
-
 #include "plugin.h"
 
 #include "ErrorCodes.h"
@@ -26,39 +25,29 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //#include <util/PluginManager.h>
 //#include <query/Parser.h>
 
-
-
-
-EXPORTED_FUNCTION void GetPluginVersion ( uint32_t &major, uint32_t &minor, uint32_t &patch, uint32_t &build )
-{
+EXPORTED_FUNCTION void GetPluginVersion(uint32_t &major, uint32_t &minor, uint32_t &patch, uint32_t &build) {
     // Must match SciDB version, otherwise the plugin cannot be loaded
     major = scidb::SCIDB_VERSION_MAJOR();
     minor = scidb::SCIDB_VERSION_MINOR();
     patch = scidb::SCIDB_VERSION_PATCH();
     build = scidb::SCIDB_VERSION_BUILD();
-//     major = SCIDB4GEO_VERSION_MAJOR;
-//     minor = SCIDB4GEO_VERSION_MINOR;
-//     patch = 0; // TODO: set via cmake
-//     build = 0; // TODO: set via cmake
+    //     major = SCIDB4GEO_VERSION_MAJOR;
+    //     minor = SCIDB4GEO_VERSION_MINOR;
+    //     patch = 0; // TODO: set via cmake
+    //     build = 0; // TODO: set via cmake
 }
 
-
-class Instance
-{
-public:
+class Instance {
+   public:
     Instance() {
-        //register error messages
+//register error messages
 
-
-
-
-
-#define X(name, code, msg ) _msg[code] = msg;
+#define X(name, code, msg) _msg[code] = msg;
 #include "Errors.def"
 
 #undef X
 
-        scidb::ErrorsLibrary::getInstance()->registerErrors ( SCIDB4GEO_ERRORNAMESPACE, &_msg );
+        scidb::ErrorsLibrary::getInstance()->registerErrors(SCIDB4GEO_ERRORNAMESPACE, &_msg);
 
         // Load macro automatically
 
@@ -66,14 +55,10 @@ public:
     }
 
     ~Instance() {
-        scidb::ErrorsLibrary::getInstance()->unregisterErrors ( SCIDB4GEO_ERRORNAMESPACE );
+        scidb::ErrorsLibrary::getInstance()->unregisterErrors(SCIDB4GEO_ERRORNAMESPACE);
     }
 
-private:
+   private:
     scidb::ErrorsLibrary::ErrorsMessages _msg;
 
 } _instance;
-
-
-
-

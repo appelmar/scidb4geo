@@ -16,53 +16,35 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -----------------------------------------------------------------------------*/
 
-
 #ifndef UTILS_H
 #define UTILS_H
 
-
-
+#include <cmath>
 #include <sstream>
 #include <string>
-#include <cmath>
 
-namespace scidb4geo
-{
+namespace scidb4geo {
 
+    namespace utils {
 
-    namespace utils
-    {
-
-
-        inline double min ( const double *v, const size_t &n )
-        {
-            if ( n == 0 ) return NAN;
+        inline double min(const double *v, const size_t &n) {
+            if (n == 0) return NAN;
             double m = v[0];
-            for ( size_t i = 1; i < n; ++i ) {
-                if ( v[i] < m ) m = v[i];
+            for (size_t i = 1; i < n; ++i) {
+                if (v[i] < m) m = v[i];
             }
             return m;
         }
 
-        inline double max ( const double *v, const size_t &n )
-        {
-            if ( n == 0 ) return NAN;
+        inline double max(const double *v, const size_t &n) {
+            if (n == 0) return NAN;
             double m = v[0];
-            for ( size_t i = 1; i < n; ++i ) {
-                if ( v[i] > m ) m = v[i];
+            for (size_t i = 1; i < n; ++i) {
+                if (v[i] > m) m = v[i];
             }
             return m;
         }
-
-
     }
-
-
-
-
 }
-
-
-
 
 #endif

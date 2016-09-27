@@ -35,95 +35,86 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -----------------------------------------------------------------------------*/
 
-#include "../plugin.h" // Must be first to define PROJECT_ROOT
+#include "../plugin.h"  // Must be first to define PROJECT_ROOT
 
 #include <string>
 
-#include "query/Operator.h"
-#include "array/TupleArray.h"
-#include "system/SystemCatalog.h"
 #include <map>
 #include "../PostgresWrapper.h"
+#include "array/TupleArray.h"
+#include "query/Operator.h"
+#include "system/SystemCatalog.h"
 
-namespace scidb4geo
-{
+namespace scidb4geo {
     using namespace std;
     using namespace boost;
     using namespace scidb;
 
     /*! @copydoc LogicalOperator
      */
-    class PhysicalGetMD: public PhysicalOperator
-    {
-    public:
-        PhysicalGetMD ( string &logicalName, const string &physicalName, const Parameters &parameters, const ArrayDesc &schema ) :
-            PhysicalOperator ( logicalName, physicalName, parameters, schema ) {
+    class PhysicalGetMD : public PhysicalOperator {
+       public:
+        PhysicalGetMD(string &logicalName, const string &physicalName, const Parameters &parameters, const ArrayDesc &schema) : PhysicalOperator(logicalName, physicalName, parameters, schema) {
         }
 
-        virtual RedistributeContext getOutputDistribution ( const std::vector<RedistributeContext> &inputDistributions,
-                const std::vector< ArrayDesc> &inputSchemas ) const {
-            return RedistributeContext ( psLocalInstance );
+        virtual RedistributeContext getOutputDistribution(const std::vector<RedistributeContext> &inputDistributions,
+                                                          const std::vector<ArrayDesc> &inputSchemas) const {
+            return RedistributeContext(psLocalInstance);
         }
 
-        void preSingleExecute ( std::shared_ptr<Query> query ) {
+        void preSingleExecute(std::shared_ptr<Query> query) {
+            std::shared_ptr<TupleArray> tuples(std::make_shared<TupleArray>(_schema, _arena));
 
-            std::shared_ptr<TupleArray> tuples ( std::make_shared<TupleArray> ( _schema, _arena ) );
+            string arrayname = ArrayDesc::makeUnversionedName(((std::shared_ptr<OperatorParamReference> &)_parameters[0])->getObjectName());
+            ArrayDesc arrayDesc;
+            SystemCatalog::getInstance()->getArrayDesc(arrayname, query->getCatalogVersion(arrayname), LAST_VERSION, arrayDesc);
 
-            string arrayname = ArrayDesc::makeUnversionedName ( ( ( std::shared_ptr<OperatorParamReference> & ) _parameters[0] )->getObjectName() );
-	    ArrayDesc arrayDesc;
-	    SystemCatalog::getInstance()->getArrayDesc(arrayname, query->getCatalogVersion(arrayname), LAST_VERSION, arrayDesc);
-	    
-//             ArrayID arrayId = SystemCatalog::getInstance()->findArrayByName ( arrayname );
-//             std::shared_ptr<ArrayDesc> arrayDesc = SystemCatalog::getInstance()->getArrayDesc ( arrayId );
+            //             ArrayID arrayId = SystemCatalog::getInstance()->findArrayByName ( arrayname );
+            //             std::shared_ptr<ArrayDesc> arrayDesc = SystemCatalog::getInstance()->getArrayDesc ( arrayId );
 
+            map<string, string> arraymd = PostgresWrapper::instance()->dbGetArrayMD(arrayname);  // TODO: Add domain
 
-            map<string, string> arraymd = PostgresWrapper::instance()->dbGetArrayMD ( arrayname ); // TODO: Add domain
-
-            for ( map<string, string>::iterator it = arraymd.begin(); it != arraymd.end(); ++it ) {
+            for (map<string, string>::iterator it = arraymd.begin(); it != arraymd.end(); ++it) {
                 Value tuple[5];
-                tuple[0].setString ( arrayname );
-                tuple[1].setString ( "" );
-                tuple[2].setString ( "" ); // TODO: add domain
-                tuple[3].setString ( it->first );
-                tuple[4].setString ( it->second );
+                tuple[0].setString(arrayname);
+                tuple[1].setString("");
+                tuple[2].setString("");  // TODO: add domain
+                tuple[3].setString(it->first);
+                tuple[4].setString(it->second);
 
-                tuples->appendTuple ( tuple );
+                tuples->appendTuple(tuple);
             }
 
-            for ( int i = 0; i < arrayDesc.getAttributes ( true ).size(); ++i ) {
-                map<string, string> attrmd = PostgresWrapper::instance()->dbGetAttributeMD ( arrayname, arrayDesc.getAttributes ( true ) [i].getName() ); // TODO: Add domain
-                for ( map<string, string>::iterator it = attrmd.begin(); it != attrmd.end(); ++it ) {
+            for (int i = 0; i < arrayDesc.getAttributes(true).size(); ++i) {
+                map<string, string> attrmd = PostgresWrapper::instance()->dbGetAttributeMD(arrayname, arrayDesc.getAttributes(true)[i].getName());  // TODO: Add domain
+                for (map<string, string>::iterator it = attrmd.begin(); it != attrmd.end(); ++it) {
                     Value tuple[5];
-                    tuple[0].setString ( arrayname );
-                    tuple[1].setString ( arrayDesc.getAttributes ( true ) [i].getName() ); // bitmap empty indicator will be removed
-                    tuple[2].setString ( "" ); // TODO: add domain
-                    tuple[3].setString ( it->first );
-                    tuple[4].setString ( it->second );
+                    tuple[0].setString(arrayname);
+                    tuple[1].setString(arrayDesc.getAttributes(true)[i].getName());  // bitmap empty indicator will be removed
+                    tuple[2].setString("");                                          // TODO: add domain
+                    tuple[3].setString(it->first);
+                    tuple[4].setString(it->second);
 
-                    tuples->appendTuple ( tuple );
+                    tuples->appendTuple(tuple);
                 }
-
             }
 
-            if ( tuples->getNumberOfTuples() > 0 ) {
+            if (tuples->getNumberOfTuples() > 0) {
                 tuples->truncate();
                 _result = tuples;
             }
-
         }
 
-        std::shared_ptr<Array> execute ( vector< std::shared_ptr<Array> > &inputArrays, std::shared_ptr<Query> query ) {
-            if ( !_result ) {
-                _result = std::make_shared<MemArray> ( _schema, query );
+        std::shared_ptr<Array> execute(vector<std::shared_ptr<Array> > &inputArrays, std::shared_ptr<Query> query) {
+            if (!_result) {
+                _result = std::make_shared<MemArray>(_schema, query);
             }
             return _result;
         }
 
-    private:
+       private:
         std::shared_ptr<Array> _result;
     };
 
-    REGISTER_PHYSICAL_OPERATOR_FACTORY ( PhysicalGetMD, "eo_getmd", "PhysicalGetMD" );
-
+    REGISTER_PHYSICAL_OPERATOR_FACTORY(PhysicalGetMD, "eo_getmd", "PhysicalGetMD");
 }
-

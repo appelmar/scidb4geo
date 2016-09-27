@@ -16,27 +16,19 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -----------------------------------------------------------------------------*/
 
-
 #ifndef ARRAY_SCHEMA_UTILS_H
 #define ARRAY_SCHEMA_UTILS_H
 
-#include <string>
 #include <array/Metadata.h>
+#include <string>
 
-namespace scidb4geo
-{
+namespace scidb4geo {
     using namespace scidb;
     using namespace std;
 
-    class ArraySchemaUtils
-    {
-
-        static Attributes arrayAttributesFromString ( string  str );
-
+    class ArraySchemaUtils {
+        static Attributes arrayAttributesFromString(string str);
     };
-
-
-
 }
 
 #endif

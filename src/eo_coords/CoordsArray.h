@@ -39,98 +39,91 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <string>
 #include <vector>
+#include "../PostgresWrapper.h"
 #include "array/DelegateArray.h"
 #include "array/Metadata.h"
-#include "query/LogicalExpression.h"
 #include "query/Expression.h"
-#include "../PostgresWrapper.h"
+#include "query/LogicalExpression.h"
 
-namespace scidb4geo
-{
+namespace scidb4geo {
 
-using namespace std;
-using namespace scidb;
+    using namespace std;
+    using namespace scidb;
 
-class CoordsArray;
-class CoordsArrayIterator;
-class CoordsChunkIterator;
+    class CoordsArray;
+    class CoordsArrayIterator;
+    class CoordsChunkIterator;
 
+    class CoordsChunkIterator : public DelegateChunkIterator {
+       public:
+        virtual Value& getItem();
+        virtual void operator++();
+        virtual void reset();
+        virtual bool setPosition(Coordinates const& pos);
+        CoordsChunkIterator(CoordsArrayIterator const& arrayIterator, DelegateChunk const* chunk, int iterationMode);
+        bool isNull();
+        virtual std::shared_ptr<Query> getQuery() { return _query; }
 
-class CoordsChunkIterator : public DelegateChunkIterator
-{
-public:
-    virtual  Value& getItem();
-    virtual void operator ++();
-    virtual void reset();
-    virtual bool setPosition(Coordinates const& pos);
-    CoordsChunkIterator(CoordsArrayIterator const& arrayIterator, DelegateChunk const* chunk, int iterationMode);
-    bool isNull();
-    virtual std::shared_ptr<Query> getQuery() { return _query; }
+       private:
+        CoordsArray const& _array;
+        AttributeID _outAttrId;
+        //std::vector<BindInfo> const& _bindings;
+        //std::vector< std::shared_ptr<ConstChunkIterator> > _iterators;
+        //ExpressionContext _params;
+        int _mode;
+        Value _value;
+        bool _applied;
+        bool _nullable;
+        Value _true_val;
+        std::shared_ptr<Query> _query;
 
-private:
-    CoordsArray const& _array;
-    AttributeID _outAttrId;
-    //std::vector<BindInfo> const& _bindings;
-    //std::vector< std::shared_ptr<ConstChunkIterator> > _iterators;
-    //ExpressionContext _params;
-    int _mode;
-    Value _value;
-    bool _applied;
-    bool _nullable;
-    Value _true_val;
-    std::shared_ptr<Query> _query;
+        AffineTransform::double2 _p_in;
+        AffineTransform::double2 _p_out;
+    };
 
-    AffineTransform::double2 _p_in;
-    AffineTransform::double2 _p_out;
-};
+    class CoordsArrayIterator : public DelegateArrayIterator {
+        friend class CoordsChunkIterator;
 
-class CoordsArrayIterator : public DelegateArrayIterator
-{
-    friend class CoordsChunkIterator;
-  public:
-    virtual void operator ++();
-    virtual void reset();
-    virtual bool setPosition(Coordinates const& pos);
-    CoordsArrayIterator(CoordsArray const& array, AttributeID attrID, AttributeID inputAttrID);
+       public:
+        virtual void operator++();
+        virtual void reset();
+        virtual bool setPosition(Coordinates const& pos);
+        CoordsArrayIterator(CoordsArray const& array, AttributeID attrID, AttributeID inputAttrID);
 
-  private:
-    std::vector< std::shared_ptr<ConstArrayIterator> > iterators;
-    AttributeID inputAttrID;
-};
+       private:
+        std::vector<std::shared_ptr<ConstArrayIterator> > iterators;
+        AttributeID inputAttrID;
+    };
 
-class CoordsArray : public DelegateArray
-{
-    friend class CoordsArrayIterator;
-    friend class CoordsChunkIterator;
-  public:
-    virtual DelegateChunk* createChunk(DelegateArrayIterator const* iterator, AttributeID id) const;
-    virtual DelegateChunkIterator* createChunkIterator(DelegateChunk const* chunk, int iterationMode) const;
-    virtual DelegateArrayIterator* createArrayIterator(AttributeID id) const;
+    class CoordsArray : public DelegateArray {
+        friend class CoordsArrayIterator;
+        friend class CoordsChunkIterator;
 
-    /*CoordsArray(ArrayDesc const& desc, std::shared_ptr<Array> const& array,
+       public:
+        virtual DelegateChunk* createChunk(DelegateArrayIterator const* iterator, AttributeID id) const;
+        virtual DelegateChunkIterator* createChunkIterator(DelegateChunk const* chunk, int iterationMode) const;
+        virtual DelegateArrayIterator* createArrayIterator(AttributeID id) const;
+
+        /*CoordsArray(ArrayDesc const& desc, std::shared_ptr<Array> const& array,
             std::vector <std::shared_ptr<Expression> > expressions,
             const std::shared_ptr<Query>& query, bool tile);
-      */      
-            
-    CoordsArray ( std::shared_ptr<Query> &query,  std::shared_ptr<Array> const& array_in, ArrayDesc const &desc_out, bool tile);
+      */
 
-  private:
-    
-    ArrayDesc _desc_out;
+        CoordsArray(std::shared_ptr<Query>& query, std::shared_ptr<Array> const& array_in, ArrayDesc const& desc_out, bool tile);
 
-    int _xidx;
-    int _yidx;
-    int _tidx;
-    bool _runInTileMode;
-    SpatialArrayInfo  _srs;
-    TemporalArrayInfo _trs;
+       private:
+        ArrayDesc _desc_out;
 
-    uint32_t _ninstances;
-    uint64_t _instance_id;
-    
+        int _xidx;
+        int _yidx;
+        int _tidx;
+        bool _runInTileMode;
+        SpatialArrayInfo _srs;
+        TemporalArrayInfo _trs;
 
-};
-
+        uint32_t _ninstances;
+        uint64_t _instance_id;
+    };
 }
 
 #endif

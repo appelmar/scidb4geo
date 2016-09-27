@@ -111,3 +111,7 @@ install:
 deploy:
 	cp  libscidb4geo.so "$(SCIDB)/lib/scidb/plugins"
 	@echo "DONE. Please remember to restart SciDB."
+
+format:
+	find src/ -type f -not -path "src/extern/*" -iname *.h  -exec clang-format-3.9 -i -style=file {} \;
+	find src/ -type f -not -path "src/extern/*" -iname *.cxx  -exec clang-format-3.9 -i -style=file {} \;

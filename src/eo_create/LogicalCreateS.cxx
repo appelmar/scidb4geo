@@ -36,90 +36,81 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -----------------------------------------------------------------------------*/
 
 #include <query/Operator.h>
-#include "ArraySchemaUtils.h"
 #include "../ErrorCodes.h"
+#include "ArraySchemaUtils.h"
 
-namespace scidb4geo
-{
+namespace scidb4geo {
 
     using namespace std;
     using namespace scidb;
 
     struct LogicalCreateS : LogicalOperator {
-        LogicalCreateS ( const string &logicalName, const string &alias )
-            : LogicalOperator ( logicalName, alias ) {
+        LogicalCreateS(const string &logicalName, const string &alias)
+            : LogicalOperator(logicalName, alias) {
+            _properties.ddl = true;
 
-            _properties.ddl       = true;
-
-            ADD_PARAM_OUT_ARRAY_NAME()        // The array name
-            ADD_PARAM_CONSTANT ( TID_STRING ) // Definition of attributes
-            ADD_PARAM_CONSTANT ( TID_STRING ) // Definition of SRS
-            ADD_PARAM_CONSTANT ( TID_STRING ) // Definition of coverage
-            ADD_PARAM_CONSTANT ( TID_STRING ) // Definition of affine transformation
-            ADD_PARAM_VARIES()        // Additional parameters (like TEMP flag)
-
+            ADD_PARAM_OUT_ARRAY_NAME()      // The array name
+            ADD_PARAM_CONSTANT(TID_STRING)  // Definition of attributes
+            ADD_PARAM_CONSTANT(TID_STRING)  // Definition of SRS
+            ADD_PARAM_CONSTANT(TID_STRING)  // Definition of coverage
+            ADD_PARAM_CONSTANT(TID_STRING)  // Definition of affine transformation
+            ADD_PARAM_VARIES()              // Additional parameters (like TEMP flag)
         }
 
-        vector<std::shared_ptr<OperatorParamPlaceholder> > nextVaryParamPlaceholder ( const vector< ArrayDesc> &schemas ) {
+        vector<std::shared_ptr<OperatorParamPlaceholder> > nextVaryParamPlaceholder(const vector<ArrayDesc> &schemas) {
             vector<std::shared_ptr<OperatorParamPlaceholder> > res;
 
-            if ( _parameters.size() == 4 ) {
+            if (_parameters.size() == 4) {
                 //res.push_back(PARAM_CONSTANT(TID_STRING));
-                res.push_back ( PARAM_CONSTANT ( TID_BOOL ) );
+                res.push_back(PARAM_CONSTANT(TID_BOOL));
             }
 
-            else  res.push_back ( END_OF_VARIES_PARAMS() );
+            else
+                res.push_back(END_OF_VARIES_PARAMS());
 
             return res;
         }
 
-        ArrayDesc inferSchema ( vector<ArrayDesc>, shared_ptr<Query> query ) {
-            assert ( param<OperatorParam> ( 0 )->getParamType() == PARAM_ARRAY_REF );
-            string arrayname ( param<OperatorParamArrayReference> ( 0 )->getObjectName() );
+        ArrayDesc inferSchema(vector<ArrayDesc>, shared_ptr<Query> query) {
+            assert(param<OperatorParam>(0)->getParamType() == PARAM_ARRAY_REF);
+            string arrayname(param<OperatorParamArrayReference>(0)->getObjectName());
 
-            if ( SystemCatalog::getInstance()->containsArray ( arrayname ) ) {
-                SCIDB4GEO_ERROR ( "Array with the same name already exists", SCIDB4GEO_ERR_ARRAYEXISTS );
+            if (SystemCatalog::getInstance()->containsArray(arrayname)) {
+                SCIDB4GEO_ERROR("Array with the same name already exists", SCIDB4GEO_ERR_ARRAYEXISTS);
             }
 
             // TODO: Derive schema, check affine transform and SRS
 
-
-
-
-
-
             return ArrayDesc();
         }
 
-        void inferArrayAccess ( shared_ptr<Query> &query ) {
-            LogicalOperator::inferArrayAccess ( query );
+        void inferArrayAccess(shared_ptr<Query> &query) {
+            LogicalOperator::inferArrayAccess(query);
 
-            assert ( param<OperatorParam> ( 0 )->getParamType() == PARAM_ARRAY_REF );
+            assert(param<OperatorParam>(0)->getParamType() == PARAM_ARRAY_REF);
 
-            string arrayname ( param<OperatorParamArrayReference> ( 0 )->getObjectName() );
+            string arrayname(param<OperatorParamArrayReference>(0)->getObjectName());
 
-            assert ( !arrayname.empty() && arrayname.find ( '@' ) == string::npos ); // no version number
+            assert(!arrayname.empty() && arrayname.find('@') == string::npos);  // no version number
 
-            shared_ptr<SystemCatalog::LockDesc> lock ( make_shared<SystemCatalog::LockDesc> ( arrayname,
-                    query->getQueryID(),
-                    Cluster::getInstance()->getLocalInstanceId(),
-                    SystemCatalog::LockDesc::COORD,
-                    SystemCatalog::LockDesc::CRT ) );
-            shared_ptr<SystemCatalog::LockDesc> resLock = query->requestLock ( lock );
-            assert ( resLock );
-            assert ( resLock->getLockMode() >= SystemCatalog::LockDesc::CRT );
+            shared_ptr<SystemCatalog::LockDesc> lock(make_shared<SystemCatalog::LockDesc>(arrayname,
+                                                                                          query->getQueryID(),
+                                                                                          Cluster::getInstance()->getLocalInstanceId(),
+                                                                                          SystemCatalog::LockDesc::COORD,
+                                                                                          SystemCatalog::LockDesc::CRT));
+            shared_ptr<SystemCatalog::LockDesc> resLock = query->requestLock(lock);
+            assert(resLock);
+            assert(resLock->getLockMode() >= SystemCatalog::LockDesc::CRT);
         }
 
-        template<class t>
-        shared_ptr<t> &param ( size_t i ) const {
-            assert ( i < _parameters.size() );
+        template <class t>
+        shared_ptr<t> &param(size_t i) const {
+            assert(i < _parameters.size());
 
-            return ( shared_ptr<t> & ) _parameters[i];
+            return (shared_ptr<t> &)_parameters[i];
         }
     };
 
+    DECLARE_LOGICAL_OPERATOR_FACTORY(LogicalCreateS, "eo_create_s")
 
-    DECLARE_LOGICAL_OPERATOR_FACTORY ( LogicalCreateS,     "eo_create_s" )
-
-} //namespace
-
+}  //namespace

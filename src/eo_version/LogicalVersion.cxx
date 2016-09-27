@@ -35,17 +35,14 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -----------------------------------------------------------------------------*/
 
-#include "../plugin.h" // Must be first to define PROJECT_ROOT
+#include "../plugin.h"  // Must be first to define PROJECT_ROOT
 
+#include "array/Metadata.h"
 #include "query/Operator.h"
 #include "system/Exceptions.h"
-#include "array/Metadata.h"
 #include "system/SystemCatalog.h"
 
-
-namespace scidb4geo
-{
-
+namespace scidb4geo {
 
     using namespace std;
     using namespace boost;
@@ -73,38 +70,29 @@ namespace scidb4geo
      *   n/a
      *
      */
-    class LogicalVersion: public LogicalOperator
-    {
-    public:
-        LogicalVersion ( const string &logicalName, const std::string &alias ) :
-            LogicalOperator ( logicalName, alias ) {
+    class LogicalVersion : public LogicalOperator {
+       public:
+        LogicalVersion(const string &logicalName, const std::string &alias) : LogicalOperator(logicalName, alias) {
             //  This operator does not accept any parameters
         }
 
+        ArrayDesc inferSchema(std::vector<ArrayDesc> inputSchemas, std::shared_ptr<Query> query) {
+            assert(inputSchemas.size() == 0);
+            assert(_parameters.size() == 0);
 
+            Attributes attributes(3);
+            attributes[0] = AttributeDesc((AttributeID)0, "major", TID_STRING, 0, 0);
+            attributes[1] = AttributeDesc((AttributeID)1, "minor", TID_STRING, 0, 0);
+            attributes[2] = AttributeDesc((AttributeID)2, "build", TID_STRING, 0, 0);
 
-        ArrayDesc inferSchema ( std::vector< ArrayDesc> inputSchemas, std::shared_ptr< Query> query ) {
-            assert ( inputSchemas.size() == 0 );
-            assert ( _parameters.size() == 0 );
+            vector<DimensionDesc> dimensions(1);
 
-
-            Attributes attributes ( 3 );
-            attributes[0] = AttributeDesc ( ( AttributeID ) 0, "major", TID_STRING, 0, 0 );
-            attributes[1] = AttributeDesc ( ( AttributeID ) 1, "minor", TID_STRING, 0, 0 );
-            attributes[2] = AttributeDesc ( ( AttributeID ) 2, "build", TID_STRING, 0, 0 );
-
-            vector<DimensionDesc> dimensions ( 1 );
-
-            dimensions[0] = DimensionDesc ( "i", 0, 0, 0, 0, 1, 0 );
-            return ArrayDesc ( "version", attributes, dimensions, defaultPartitioning() );
+            dimensions[0] = DimensionDesc("i", 0, 0, 0, 0, 1, 0);
+            return ArrayDesc("version", attributes, dimensions, defaultPartitioning());
         }
-
     };
 
-
-    REGISTER_LOGICAL_OPERATOR_FACTORY ( LogicalVersion, "eo_version" );
+    REGISTER_LOGICAL_OPERATOR_FACTORY(LogicalVersion, "eo_version");
     typedef LogicalVersion LogicalVersion_depr;
-    REGISTER_LOGICAL_OPERATOR_FACTORY ( LogicalVersion_depr, "st_version" ); // Backward compatibility
-
+    REGISTER_LOGICAL_OPERATOR_FACTORY(LogicalVersion_depr, "st_version");  // Backward compatibility
 }
-

@@ -35,84 +35,74 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -----------------------------------------------------------------------------*/
 
-#include "query/Operator.h"
-#include "system/SystemCatalog.h"
-#include "system/Exceptions.h"
 #include "../ErrorCodes.h"
-
+#include "query/Operator.h"
+#include "system/Exceptions.h"
+#include "system/SystemCatalog.h"
 
 using namespace std;
 using namespace scidb;
 
-namespace scidb4geo
-{
+namespace scidb4geo {
 
-    class LogicalCoords: public LogicalOperator
-    {
-    public:
-        LogicalCoords ( const string &logicalName, const std::string &alias ) :
-            LogicalOperator ( logicalName, alias ) {
+    class LogicalCoords : public LogicalOperator {
+       public:
+        LogicalCoords(const string &logicalName, const std::string &alias) : LogicalOperator(logicalName, alias) {
             _properties.tile = false;
             ADD_PARAM_INPUT()
         }
 
-        ArrayDesc inferSchema ( std::vector<ArrayDesc> schemas, std::shared_ptr<Query> query ) {
-            assert ( schemas.size() == 1 );
-            assert ( _parameters.size() == 0 );
+        ArrayDesc inferSchema(std::vector<ArrayDesc> schemas, std::shared_ptr<Query> query) {
+            assert(schemas.size() == 1);
+            assert(_parameters.size() == 0);
 
-//             if ( ArrayDesc::makeUnversionedName ( schemas[0].getName() ).compare ( "" ) == 0 ||
-//                     ArrayDesc::makeUnversionedName ( schemas[1].getName() ).compare ( "" ) == 0 ||
-//                     ArrayDesc::makeUnversionedName ( schemas[0].getName() ).compare ( ArrayDesc::makeUnversionedName ( schemas[1].getName() ) ) == 0 ) {
-//                 SCIDB4GEO_ERROR ( "Operator works on two different persistent input arrays", SCIDB4GEO_ERR_INVALIDINPUT );
-//             }
+            //             if ( ArrayDesc::makeUnversionedName ( schemas[0].getName() ).compare ( "" ) == 0 ||
+            //                     ArrayDesc::makeUnversionedName ( schemas[1].getName() ).compare ( "" ) == 0 ||
+            //                     ArrayDesc::makeUnversionedName ( schemas[0].getName() ).compare ( ArrayDesc::makeUnversionedName ( schemas[1].getName() ) ) == 0 ) {
+            //                 SCIDB4GEO_ERROR ( "Operator works on two different persistent input arrays", SCIDB4GEO_ERR_INVALIDINPUT );
+            //             }
 
             // Check dimensions
             Dimensions const &dims = schemas[0].getDimensions();
 
             Attributes outAttrs;
-            AttributeID nextAttrId =0;
-            for (size_t i=0; i<schemas[0].getAttributes().size(); i++)
-            {
-                AttributeDesc const& attr = schemas[0].getAttributes()[i];
-                if(attr.getType()!=TID_INDICATOR)
-                {
-                    outAttrs.push_back( AttributeDesc(nextAttrId++,
-                                                    attr.getName(),
-                                                    attr.getType(),
-                                                    attr.getFlags(),
-                                                    attr.getDefaultCompressionMethod(),
-                                                    attr.getAliases(),
-                                                    attr.getReserve(),
-                                                    &attr.getDefaultValue(),
-                                                    attr.getDefaultValueExpr(),
-                                                    attr.getVarSize()));
+            AttributeID nextAttrId = 0;
+            for (size_t i = 0; i < schemas[0].getAttributes().size(); i++) {
+                AttributeDesc const &attr = schemas[0].getAttributes()[i];
+                if (attr.getType() != TID_INDICATOR) {
+                    outAttrs.push_back(AttributeDesc(nextAttrId++,
+                                                     attr.getName(),
+                                                     attr.getType(),
+                                                     attr.getFlags(),
+                                                     attr.getDefaultCompressionMethod(),
+                                                     attr.getAliases(),
+                                                     attr.getReserve(),
+                                                     &attr.getDefaultValue(),
+                                                     attr.getDefaultValueExpr(),
+                                                     attr.getVarSize()));
                 }
             }
-            
-            
-             if ( schemas[0].getEmptyBitmapAttribute() ) {
+
+            if (schemas[0].getEmptyBitmapAttribute()) {
                 AttributeDesc const *emptyTag = schemas[0].getEmptyBitmapAttribute();
-                outAttrs.push_back ( AttributeDesc ( ( AttributeID ) nextAttrId++,
-                                                     emptyTag->getName(),
-                                                     emptyTag->getType(),
-                                                     emptyTag->getFlags(),
-                                                     emptyTag->getDefaultCompressionMethod(),
-                                                     emptyTag->getAliases(),
-                                                     emptyTag->getReserve(),
-                                                     &emptyTag->getDefaultValue(),
-                                                     emptyTag->getDefaultValueExpr(),
-                                                     emptyTag->getVarSize() ) );
+                outAttrs.push_back(AttributeDesc((AttributeID)nextAttrId++,
+                                                 emptyTag->getName(),
+                                                 emptyTag->getType(),
+                                                 emptyTag->getFlags(),
+                                                 emptyTag->getDefaultCompressionMethod(),
+                                                 emptyTag->getAliases(),
+                                                 emptyTag->getReserve(),
+                                                 &emptyTag->getDefaultValue(),
+                                                 emptyTag->getDefaultValueExpr(),
+                                                 emptyTag->getVarSize()));
             }
-            
-            outAttrs.push_back ( AttributeDesc ( ( AttributeID ) nextAttrId++, "eo_x", TID_DOUBLE, AttributeDesc::IS_NULLABLE, 0 ) ); 
-            outAttrs.push_back ( AttributeDesc ( ( AttributeID ) nextAttrId++, "eo_y", TID_DOUBLE, AttributeDesc::IS_NULLABLE, 0 ) ); 
-            outAttrs.push_back ( AttributeDesc ( ( AttributeID ) nextAttrId++, "eo_t", TID_STRING, AttributeDesc::IS_NULLABLE, 0 ) );
 
-           
+            outAttrs.push_back(AttributeDesc((AttributeID)nextAttrId++, "eo_x", TID_DOUBLE, AttributeDesc::IS_NULLABLE, 0));
+            outAttrs.push_back(AttributeDesc((AttributeID)nextAttrId++, "eo_y", TID_DOUBLE, AttributeDesc::IS_NULLABLE, 0));
+            outAttrs.push_back(AttributeDesc((AttributeID)nextAttrId++, "eo_t", TID_STRING, AttributeDesc::IS_NULLABLE, 0));
 
-            return ArrayDesc ( "CoordsArray", outAttrs, dims, defaultPartitioning()  );
-
+            return ArrayDesc("CoordsArray", outAttrs, dims, defaultPartitioning());
         }
     };
-    REGISTER_LOGICAL_OPERATOR_FACTORY ( LogicalCoords, "eo_coords" );
+    REGISTER_LOGICAL_OPERATOR_FACTORY(LogicalCoords, "eo_coords");
 }

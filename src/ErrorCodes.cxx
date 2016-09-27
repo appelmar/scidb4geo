@@ -16,84 +16,61 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -----------------------------------------------------------------------------*/
 
-
 #include "ErrorCodes.h"
 
-namespace scidb4geo
-{
+namespace scidb4geo {
 
-
-
-// #define X(_name, _code, _msg ) _name = SCIDB_USER_ERROR_CODE_START + _code,
-//       #include "Errors.def"
-// #undef X
-
+    // #define X(_name, _code, _msg ) _name = SCIDB_USER_ERROR_CODE_START + _code,
+    //       #include "Errors.def"
+    // #undef X
 
     ErrorManager *ErrorManager::_instance = 0;
 
-    ErrorManager *ErrorManager::instance()
-    {
-        if ( !_instance ) _instance = new ErrorManager();
+    ErrorManager *ErrorManager::instance() {
+        if (!_instance) _instance = new ErrorManager();
         return _instance;
     }
 
-
-
-    ErrorManager::ErrorManager()
-    {
-#define X(name, code, msg ) errNames.insert ( std::pair<StatusCode,string>(name,#name) );
+    ErrorManager::ErrorManager() {
+#define X(name, code, msg) errNames.insert(std::pair<StatusCode, string>(name, #name));
 #include "Errors.def"
 #undef X
 
-#define X(name, code, msg ) errMsgs.insert ( std::pair<StatusCode,string>(name,msg) );
+#define X(name, code, msg) errMsgs.insert(std::pair<StatusCode, string>(name, msg));
 #include "Errors.def"
 #undef X
 
-#define X(name, code, msg ) errKeys.insert ( std::pair<StatusCode,int>(name,code) );
+#define X(name, code, msg) errKeys.insert(std::pair<StatusCode, int>(name, code));
 #include "Errors.def"
 #undef X
     }
 
+    //     void ErrorManager::error ( const string &msg, const StatusCode &code )
+    //     {
+    //       log4cxx::Logger::getLogger ( SCIDB4GEO_LOGGERNAME )->error ( msg );
+    //       throw scidb::UserException(REL_FILE, __FUNCTION__, __LINE__, SCIDB4GEO_ERRORNAMESPACE, scidb::SCIDB_SE_EXECUTION, errKeys[code], "SCIDB_SE_EXECUTION", errNames[code].c_str()) << msg;
+    //     }
+    //
+    //
+    //     void ErrorManager::warn ( const string &msg)
+    //     {
+    //       log4cxx::Logger::getLogger ( SCIDB4GEO_LOGGERNAME )->warn ( msg );
+    //     }
+    //
+    //      void ErrorManager::debug ( const string &msg)
+    //     {
+    //       log4cxx::Logger::getLogger ( SCIDB4GEO_LOGGERNAME )->debug ( msg );
+    //     }
 
-
-
-
-//     void ErrorManager::error ( const string &msg, const StatusCode &code )
-//     {
-//       log4cxx::Logger::getLogger ( SCIDB4GEO_LOGGERNAME )->error ( msg );
-//       throw scidb::UserException(REL_FILE, __FUNCTION__, __LINE__, SCIDB4GEO_ERRORNAMESPACE, scidb::SCIDB_SE_EXECUTION, errKeys[code], "SCIDB_SE_EXECUTION", errNames[code].c_str()) << msg;
-//     }
-//
-//
-//     void ErrorManager::warn ( const string &msg)
-//     {
-//       log4cxx::Logger::getLogger ( SCIDB4GEO_LOGGERNAME )->warn ( msg );
-//     }
-//
-//      void ErrorManager::debug ( const string &msg)
-//     {
-//       log4cxx::Logger::getLogger ( SCIDB4GEO_LOGGERNAME )->debug ( msg );
-//     }
-
-    int scidb4geo::ErrorManager::getKey ( scidb4geo::StatusCode code )
-    {
+    int scidb4geo::ErrorManager::getKey(scidb4geo::StatusCode code) {
         return errKeys[code];
     }
 
-    std::string scidb4geo::ErrorManager::getMsg ( scidb4geo::StatusCode code )
-    {
+    std::string scidb4geo::ErrorManager::getMsg(scidb4geo::StatusCode code) {
         return errMsgs[code];
     }
 
-    std::string scidb4geo::ErrorManager::getName ( scidb4geo::StatusCode code )
-    {
+    std::string scidb4geo::ErrorManager::getName(scidb4geo::StatusCode code) {
         return errNames[code];
     }
-
-
-
-
-
-
-
 }

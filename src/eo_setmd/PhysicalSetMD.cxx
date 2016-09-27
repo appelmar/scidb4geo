@@ -35,83 +35,69 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -----------------------------------------------------------------------------*/
 
-#include "../plugin.h" // Must be first to define PROJECT_ROOT
+#include "../plugin.h"  // Must be first to define PROJECT_ROOT
 
 #include <boost/make_shared.hpp>
-#include "query/Operator.h"
 #include "array/Metadata.h"
+#include "query/Operator.h"
 
-#include "../PostgresWrapper.h"
 #include "../ErrorCodes.h"
+#include "../PostgresWrapper.h"
 
 #include <boost/algorithm/string.hpp>
 
-namespace scidb4geo
-{
+namespace scidb4geo {
     using namespace std;
     using namespace scidb;
 
-
-
     /*! @copydoc LogicalSetTRS
      */
-    class PhysicalSetMD : public PhysicalOperator
-    {
-    public:
-        PhysicalSetMD ( const string &logicalName, const string &physicalName, const Parameters &parameters, const ArrayDesc &schema ) :
-            PhysicalOperator ( logicalName, physicalName, parameters, schema ) {}
+    class PhysicalSetMD : public PhysicalOperator {
+       public:
+        PhysicalSetMD(const string &logicalName, const string &physicalName, const Parameters &parameters, const ArrayDesc &schema) : PhysicalOperator(logicalName, physicalName, parameters, schema) {}
 
-
-        virtual void preSingleExecute ( shared_ptr<Query> query ) {
-            string arrayName = ( ( std::shared_ptr<OperatorParamReference> & ) _parameters[0] )->getObjectName();
+        virtual void preSingleExecute(shared_ptr<Query> query) {
+            string arrayName = ((std::shared_ptr<OperatorParamReference> &)_parameters[0])->getObjectName();
             string keys;
             string vals;
 
-            if ( _parameters.size() == 3 ) {
+            if (_parameters.size() == 3) {
                 // Set array metadata
-                keys = ( ( std::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[1] )->getExpression()->evaluate().getString();
-                vals = ( ( std::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[2] )->getExpression()->evaluate().getString();
+                keys = ((std::shared_ptr<OperatorParamPhysicalExpression> &)_parameters[1])->getExpression()->evaluate().getString();
+                vals = ((std::shared_ptr<OperatorParamPhysicalExpression> &)_parameters[2])->getExpression()->evaluate().getString();
 
-            }
-            else if ( _parameters.size() == 4 ) {
+            } else if (_parameters.size() == 4) {
                 // Set attribute metadata
-                keys = ( ( std::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[2] )->getExpression()->evaluate().getString();
-                vals = ( ( std::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[3] )->getExpression()->evaluate().getString();
+                keys = ((std::shared_ptr<OperatorParamPhysicalExpression> &)_parameters[2])->getExpression()->evaluate().getString();
+                vals = ((std::shared_ptr<OperatorParamPhysicalExpression> &)_parameters[3])->getExpression()->evaluate().getString();
             }
 
-            vector <string> k;
-            vector <string> v;
-            boost::split ( k, keys, boost::is_any_of ( ",;" ) );
-            boost::split ( v, vals, boost::is_any_of ( ",;" ) );
-            if ( k.size() != v.size() ) {
-                SCIDB4GEO_ERROR ( "Different number of keys and values for metadata", SCIDB4GEO_ERR_UNKNOWN );
+            vector<string> k;
+            vector<string> v;
+            boost::split(k, keys, boost::is_any_of(",;"));
+            boost::split(v, vals, boost::is_any_of(",;"));
+            if (k.size() != v.size()) {
+                SCIDB4GEO_ERROR("Different number of keys and values for metadata", SCIDB4GEO_ERR_UNKNOWN);
             }
 
             map<string, string> kv;
-            for ( unsigned int i = 0; i < k.size(); ++i ) {
-                kv.insert ( std::pair<string, string> ( k[i], v[i] ) );
+            for (unsigned int i = 0; i < k.size(); ++i) {
+                kv.insert(std::pair<string, string>(k[i], v[i]));
             }
 
-
-            if ( _parameters.size() == 3 ) {
-                PostgresWrapper::instance()->dbSetArrayMD ( arrayName, kv ); // TODO: Add domain
+            if (_parameters.size() == 3) {
+                PostgresWrapper::instance()->dbSetArrayMD(arrayName, kv);  // TODO: Add domain
+            } else if (_parameters.size() == 4) {
+                string attrname = ((std::shared_ptr<OperatorParamPhysicalExpression> &)_parameters[1])->getExpression()->evaluate().getString();
+                PostgresWrapper::instance()->dbSetAttributeMD(arrayName, attrname, kv);  // TODO: Add domain
             }
-            else if ( _parameters.size() == 4 ) {
-                string attrname = ( ( std::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[1] )->getExpression()->evaluate().getString();
-                PostgresWrapper::instance()->dbSetAttributeMD ( arrayName, attrname, kv ); // TODO: Add domain
-            }
-
         }
 
-        std::shared_ptr< Array> execute ( std::vector< std::shared_ptr< Array> > &inputArrays,
-                                            std::shared_ptr<Query> query ) {
-            return std::shared_ptr< Array>();
+        std::shared_ptr<Array> execute(std::vector<std::shared_ptr<Array> > &inputArrays,
+                                       std::shared_ptr<Query> query) {
+            return std::shared_ptr<Array>();
         }
-
-
     };
 
-    REGISTER_PHYSICAL_OPERATOR_FACTORY ( PhysicalSetMD, "eo_setmd", "PhysicalSetMD" );
-
+    REGISTER_PHYSICAL_OPERATOR_FACTORY(PhysicalSetMD, "eo_setmd", "PhysicalSetMD");
 }
-

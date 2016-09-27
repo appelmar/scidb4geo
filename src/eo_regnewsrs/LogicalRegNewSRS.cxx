@@ -35,22 +35,19 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -----------------------------------------------------------------------------*/
 
-#include "../plugin.h" // Must be first to define PROJECT_ROOT
+#include "../plugin.h"  // Must be first to define PROJECT_ROOT
 
+#include "array/Metadata.h"
 #include "query/Operator.h"
 #include "system/Exceptions.h"
-#include "array/Metadata.h"
 #include "system/SystemCatalog.h"
 
 #include "../PostgresWrapper.h"
-namespace scidb4geo
-{
-
+namespace scidb4geo {
 
     using namespace std;
     using namespace boost;
     using namespace scidb;
-
 
     /**
      * @brief SciDB Operator eo_regnewsrs().
@@ -78,47 +75,37 @@ namespace scidb4geo
      *
      *
      */
-    class LogicalRegNewSRS: public LogicalOperator
-    {
-    public:
-        LogicalRegNewSRS ( const string &logicalName, const std::string &alias ) :
-            LogicalOperator ( logicalName, alias ) {
-            ADD_PARAM_CONSTANT ( TID_STRING )
-            ADD_PARAM_CONSTANT ( TID_INT32 )
-            ADD_PARAM_CONSTANT ( TID_STRING )
-            ADD_PARAM_CONSTANT ( TID_STRING )
+    class LogicalRegNewSRS : public LogicalOperator {
+       public:
+        LogicalRegNewSRS(const string &logicalName, const std::string &alias) : LogicalOperator(logicalName, alias) {
+            ADD_PARAM_CONSTANT(TID_STRING)
+            ADD_PARAM_CONSTANT(TID_INT32)
+            ADD_PARAM_CONSTANT(TID_STRING)
+            ADD_PARAM_CONSTANT(TID_STRING)
         }
 
+        ArrayDesc inferSchema(std::vector<ArrayDesc> inputSchemas, std::shared_ptr<Query> query) {
+            assert(inputSchemas.size() == 0);
+            assert(_parameters.size() == 4);
 
-
-
-        ArrayDesc inferSchema ( std::vector< ArrayDesc> inputSchemas, std::shared_ptr< Query> query ) {
-            assert ( inputSchemas.size() == 0 );
-            assert ( _parameters.size() == 4 );
-
-            Attributes attributes ( 4 );
-            attributes[0] = AttributeDesc ( ( AttributeID ) 0, "auth_name", TID_STRING, 0, 0 );
-            attributes[1] = AttributeDesc ( ( AttributeID ) 1, "auth_id", TID_INT32, 0, 0 );
-            attributes[2] = AttributeDesc ( ( AttributeID ) 2, "srtext", TID_STRING, 0, 0 );
-            attributes[3] = AttributeDesc ( ( AttributeID ) 3, "proj4text", TID_STRING, 0, 0 );
+            Attributes attributes(4);
+            attributes[0] = AttributeDesc((AttributeID)0, "auth_name", TID_STRING, 0, 0);
+            attributes[1] = AttributeDesc((AttributeID)1, "auth_id", TID_INT32, 0, 0);
+            attributes[2] = AttributeDesc((AttributeID)2, "srtext", TID_STRING, 0, 0);
+            attributes[3] = AttributeDesc((AttributeID)3, "proj4text", TID_STRING, 0, 0);
 
             size_t nArrays;
             nArrays = 1;
 
+            vector<DimensionDesc> dimensions(1);
+            size_t end = nArrays > 0 ? nArrays - 1 : 0;
 
-            vector<DimensionDesc> dimensions ( 1 );
-            size_t end    = nArrays > 0 ? nArrays - 1 : 0;
-
-            dimensions[0] = DimensionDesc ( "srs", 0, 0, end, end, nArrays, 0 );
-            return ArrayDesc ( "SRS", attributes, dimensions, defaultPartitioning()  );
+            dimensions[0] = DimensionDesc("srs", 0, 0, end, end, nArrays, 0);
+            return ArrayDesc("SRS", attributes, dimensions, defaultPartitioning());
         }
-
     };
 
-
-    REGISTER_LOGICAL_OPERATOR_FACTORY ( LogicalRegNewSRS, "eo_regnewsrs" );
+    REGISTER_LOGICAL_OPERATOR_FACTORY(LogicalRegNewSRS, "eo_regnewsrs");
     typedef LogicalRegNewSRS LogicalRegNewSRS_depr;
-    REGISTER_LOGICAL_OPERATOR_FACTORY ( LogicalRegNewSRS_depr, "st_regnewsrs" ); // Backward compatibility
-
+    REGISTER_LOGICAL_OPERATOR_FACTORY(LogicalRegNewSRS_depr, "st_regnewsrs");  // Backward compatibility
 }
-

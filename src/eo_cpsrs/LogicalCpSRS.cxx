@@ -35,20 +35,19 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -----------------------------------------------------------------------------*/
 
-#include "../plugin.h" // Must be first to define PROJECT_ROOT
+#include "../plugin.h"  // Must be first to define PROJECT_ROOT
 
 #include "log4cxx/logger.h"
 
 #include "query/Operator.h"
-#include "system/SystemCatalog.h"
 #include "system/Exceptions.h"
+#include "system/SystemCatalog.h"
 
-namespace scidb4geo
-{
+namespace scidb4geo {
     using namespace std;
     using namespace scidb;
 
-    static log4cxx::LoggerPtr logger ( log4cxx::Logger::getLogger ( "scidb4geo.setSpatialRef" ) );
+    static log4cxx::LoggerPtr logger(log4cxx::Logger::getLogger("scidb4geo.setSpatialRef"));
 
     /**
      * @brief SciDB Operator eo_cpsrs().
@@ -74,90 +73,73 @@ namespace scidb4geo
      *
      *
      */
-    class LogicalCpSRS: public LogicalOperator
-    {
-    public:
-        LogicalCpSRS ( const string &logicalName, const string &alias ) :
-            LogicalOperator ( logicalName, alias ) {
-
+    class LogicalCpSRS : public LogicalOperator {
+       public:
+        LogicalCpSRS(const string &logicalName, const string &alias) : LogicalOperator(logicalName, alias) {
             _properties.tile = true;
 
-            ADD_PARAM_IN_ARRAY_NAME2 ( PLACEHOLDER_ARRAY_NAME_VERSION | PLACEHOLDER_ARRAY_NAME_INDEX_NAME ) // Arrayname will be stored in _parameters[0]
-            ADD_PARAM_IN_ARRAY_NAME2 ( PLACEHOLDER_ARRAY_NAME_VERSION | PLACEHOLDER_ARRAY_NAME_INDEX_NAME ) // Arrayname will be stored in _parameters[1]
-
+            ADD_PARAM_IN_ARRAY_NAME2(PLACEHOLDER_ARRAY_NAME_VERSION | PLACEHOLDER_ARRAY_NAME_INDEX_NAME)  // Arrayname will be stored in _parameters[0]
+            ADD_PARAM_IN_ARRAY_NAME2(PLACEHOLDER_ARRAY_NAME_VERSION | PLACEHOLDER_ARRAY_NAME_INDEX_NAME)  // Arrayname will be stored in _parameters[1]
         }
 
-
-
-        void inferArrayAccess ( std::shared_ptr<Query> &query ) {
+        void inferArrayAccess(std::shared_ptr<Query> &query) {
             cout << "CALLED SetSpatialRefLogical::inferArrayAccess" << endl;
-            LogicalOperator::inferArrayAccess ( query );
+            LogicalOperator::inferArrayAccess(query);
 
-            assert ( _parameters.size() == 2 );
-            assert ( _parameters[0]->getParamType() == PARAM_ARRAY_REF && _parameters[1]->getParamType() == PARAM_ARRAY_REF );
+            assert(_parameters.size() == 2);
+            assert(_parameters[0]->getParamType() == PARAM_ARRAY_REF && _parameters[1]->getParamType() == PARAM_ARRAY_REF);
 
-            const string &arrayNameFrom = ( ( std::shared_ptr<OperatorParamReference> & ) _parameters[0] )->getObjectName();
-            const string &arrayNameTo = ( ( std::shared_ptr<OperatorParamReference> & ) _parameters[1] )->getObjectName();
+            const string &arrayNameFrom = ((std::shared_ptr<OperatorParamReference> &)_parameters[0])->getObjectName();
+            const string &arrayNameTo = ((std::shared_ptr<OperatorParamReference> &)_parameters[1])->getObjectName();
 
-            assert ( arrayNameFrom.find ( '@' ) == std::string::npos );
-            assert ( arrayNameTo.find ( '@' ) == std::string::npos );
+            assert(arrayNameFrom.find('@') == std::string::npos);
+            assert(arrayNameTo.find('@') == std::string::npos);
 
             ArrayDesc descFrom;
             ArrayDesc descTo;
 
-//             SystemCatalog::getInstance()->getArrayDesc ( arrayNameFrom, descFrom );
-//             SystemCatalog::getInstance()->getArrayDesc ( arrayNameTo, descTo );
+            //             SystemCatalog::getInstance()->getArrayDesc ( arrayNameFrom, descFrom );
+            //             SystemCatalog::getInstance()->getArrayDesc ( arrayNameTo, descTo );
 
-	    SystemCatalog::getInstance()->getArrayDesc(arrayNameFrom, query->getCatalogVersion(arrayNameFrom), LAST_VERSION, descFrom);
-	    SystemCatalog::getInstance()->getArrayDesc(arrayNameTo, query->getCatalogVersion(arrayNameTo), LAST_VERSION, descTo);
-	    
-            if ( descTo.isTransient() ) {
-                std::shared_ptr<SystemCatalog::LockDesc> lock ( std::make_shared<SystemCatalog::LockDesc> ( arrayNameTo,
-                        query->getQueryID(),
-                        Cluster::getInstance()->getLocalInstanceId(),
-                        SystemCatalog::LockDesc::COORD,
-                        SystemCatalog::LockDesc::WR ) );
-                std::shared_ptr<SystemCatalog::LockDesc> resLock ( query->requestLock ( lock ) );
+            SystemCatalog::getInstance()->getArrayDesc(arrayNameFrom, query->getCatalogVersion(arrayNameFrom), LAST_VERSION, descFrom);
+            SystemCatalog::getInstance()->getArrayDesc(arrayNameTo, query->getCatalogVersion(arrayNameTo), LAST_VERSION, descTo);
 
-                assert ( resLock );
-                assert ( resLock->getLockMode() >= SystemCatalog::LockDesc::WR );
-            }
-            else {
-                LogicalOperator::inferArrayAccess ( query ); // take read lock as per usual
+            if (descTo.isTransient()) {
+                std::shared_ptr<SystemCatalog::LockDesc> lock(std::make_shared<SystemCatalog::LockDesc>(arrayNameTo,
+                                                                                                        query->getQueryID(),
+                                                                                                        Cluster::getInstance()->getLocalInstanceId(),
+                                                                                                        SystemCatalog::LockDesc::COORD,
+                                                                                                        SystemCatalog::LockDesc::WR));
+                std::shared_ptr<SystemCatalog::LockDesc> resLock(query->requestLock(lock));
+
+                assert(resLock);
+                assert(resLock->getLockMode() >= SystemCatalog::LockDesc::WR);
+            } else {
+                LogicalOperator::inferArrayAccess(query);  // take read lock as per usual
             }
         }
 
-
-
-
-
-        ArrayDesc inferSchema ( std::vector<ArrayDesc> schemas, std::shared_ptr<Query> query ) {
+        ArrayDesc inferSchema(std::vector<ArrayDesc> schemas, std::shared_ptr<Query> query) {
             cout << "CALLED SetSpatialRefLogical::inferSchema" << endl;
-            assert ( schemas.size() == 0 );
-            assert ( _parameters.size() == 2 );
-            assert ( _parameters[0]->getParamType() == PARAM_ARRAY_REF && _parameters[1]->getParamType() == PARAM_ARRAY_REF );
+            assert(schemas.size() == 0);
+            assert(_parameters.size() == 2);
+            assert(_parameters[0]->getParamType() == PARAM_ARRAY_REF && _parameters[1]->getParamType() == PARAM_ARRAY_REF);
 
-            shared_ptr<OperatorParamArrayReference> &arrayFromRef = ( shared_ptr<OperatorParamArrayReference> & ) _parameters[0];
-            shared_ptr<OperatorParamArrayReference> &arrayToRef = ( shared_ptr<OperatorParamArrayReference> & ) _parameters[1];
+            shared_ptr<OperatorParamArrayReference> &arrayFromRef = (shared_ptr<OperatorParamArrayReference> &)_parameters[0];
+            shared_ptr<OperatorParamArrayReference> &arrayToRef = (shared_ptr<OperatorParamArrayReference> &)_parameters[1];
 
-            assert ( arrayFromRef->getArrayName().find ( '@' ) == string::npos );
-            assert ( arrayFromRef->getObjectName().find ( '@' ) == string::npos );
-            assert ( arrayToRef->getArrayName().find ( '@' ) == string::npos );
-            assert ( arrayToRef->getObjectName().find ( '@' ) == string::npos );
-
-
+            assert(arrayFromRef->getArrayName().find('@') == string::npos);
+            assert(arrayFromRef->getObjectName().find('@') == string::npos);
+            assert(arrayToRef->getArrayName().find('@') == string::npos);
+            assert(arrayToRef->getObjectName().find('@') == string::npos);
 
             ArrayDesc schema;
 
             return schema;
         }
-
     };
 
-    REGISTER_LOGICAL_OPERATOR_FACTORY ( LogicalCpSRS, "eo_cpsrs" );
+    REGISTER_LOGICAL_OPERATOR_FACTORY(LogicalCpSRS, "eo_cpsrs");
     typedef LogicalCpSRS LogicalCpSRS_depr;
-    REGISTER_LOGICAL_OPERATOR_FACTORY ( LogicalCpSRS_depr, "st_cpsrs" ); // Backward compatibility
-
-
+    REGISTER_LOGICAL_OPERATOR_FACTORY(LogicalCpSRS_depr, "st_cpsrs");  // Backward compatibility
 }
-

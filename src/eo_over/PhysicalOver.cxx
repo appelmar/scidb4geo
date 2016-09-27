@@ -35,35 +35,29 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -----------------------------------------------------------------------------*/
 
-#include "query/Operator.h"
-#include "array/Metadata.h"
 #include "OverArray.h"
+#include "array/Metadata.h"
+#include "query/Operator.h"
 //#include "query/ops/input/InputArray.h"
 
 using namespace std;
 using namespace boost;
 using namespace scidb;
 
-namespace scidb4geo
-{
-    class PhysicalOver: public PhysicalOperator
-    {
-    public:
-        PhysicalOver ( const string &logicalName, const string &physicalName, const Parameters &parameters, const ArrayDesc &schema ) :
-            PhysicalOperator ( logicalName, physicalName, parameters, schema )
-        { }
+namespace scidb4geo {
+    class PhysicalOver : public PhysicalOperator {
+       public:
+        PhysicalOver(const string &logicalName, const string &physicalName, const Parameters &parameters, const ArrayDesc &schema) : PhysicalOperator(logicalName, physicalName, parameters, schema) {}
 
-        virtual RedistributeContext getOutputDistribution ( const std::vector<RedistributeContext> &inputDistributions,
-                const std::vector< ArrayDesc> &inputSchemas ) const {
-            return RedistributeContext ( psHashPartitioned );
+        virtual PhysicalBoundaries getOutputBoundaries(const std::vector<PhysicalBoundaries> &inputBoundaries, const std::vector<ArrayDesc> &inputSchemas) const {
+            return inputBoundaries[0];
         }
 
-
-        std::shared_ptr<Array> execute ( vector< std::shared_ptr<Array> > &inputArrays, std::shared_ptr<Query> query ) {
-            assert ( inputArrays.size() == 2 );
-            assert ( _parameters.size() == 0 );
-            return std::shared_ptr<Array> ( new OverArray ( query, inputArrays[0]->getArrayDesc(), inputArrays[1]->getArrayDesc(), _schema ) );
+        std::shared_ptr<Array> execute(vector<std::shared_ptr<Array> > &inputArrays, std::shared_ptr<Query> query) {
+            assert(inputArrays.size() == 2);
+            assert(_parameters.size() == 0);
+            return std::shared_ptr<Array>(new OverArray(query, inputArrays[0]->getArrayDesc(), inputArrays[1]->getArrayDesc(), _schema));
         }
     };
-    REGISTER_PHYSICAL_OPERATOR_FACTORY ( PhysicalOver, "eo_over", "PhysicalOver" );
+    REGISTER_PHYSICAL_OPERATOR_FACTORY(PhysicalOver, "eo_over", "PhysicalOver");
 }

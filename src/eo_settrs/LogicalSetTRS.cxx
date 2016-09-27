@@ -35,25 +35,23 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -----------------------------------------------------------------------------*/
 
-#include "../plugin.h" // Must be first to define PROJECT_ROOT
+#include "../plugin.h"  // Must be first to define PROJECT_ROOT
 
 #include "log4cxx/logger.h"
 
 #include "query/Operator.h"
-#include "system/SystemCatalog.h"
 #include "system/Exceptions.h"
+#include "system/SystemCatalog.h"
 
 #include "../ErrorCodes.h"
 #include "boost/date_time/posix_time/posix_time.hpp"
 
-namespace scidb4geo
-{
-
+namespace scidb4geo {
 
     using namespace std;
     using namespace scidb;
 
-    static log4cxx::LoggerPtr logger ( log4cxx::Logger::getLogger ( "scidb4geo.eo_settrs" ) );
+    static log4cxx::LoggerPtr logger(log4cxx::Logger::getLogger("scidb4geo.eo_settrs"));
 
     /**
      * @brief SciDB Operator eo_settrs().
@@ -80,15 +78,10 @@ namespace scidb4geo
      *
      *
      */
-    class LogicalSetTRS: public LogicalOperator
-    {
-    public:
-        LogicalSetTRS ( const string &logicalName, const string &alias ) :
-            LogicalOperator ( logicalName, alias ) {
-
-
-
-            ADD_PARAM_IN_ARRAY_NAME2 ( PLACEHOLDER_ARRAY_NAME_VERSION | PLACEHOLDER_ARRAY_NAME_INDEX_NAME ) // Arrayname will be stored in _parameters[0]
+    class LogicalSetTRS : public LogicalOperator {
+       public:
+        LogicalSetTRS(const string &logicalName, const string &alias) : LogicalOperator(logicalName, alias) {
+            ADD_PARAM_IN_ARRAY_NAME2(PLACEHOLDER_ARRAY_NAME_VERSION | PLACEHOLDER_ARRAY_NAME_INDEX_NAME)  // Arrayname will be stored in _parameters[0]
             //ADD_PARAM_IN_DIMENSION_NAME()
             //ADD_PARAM_IN_DIMENSION_NAME()
             //ADD_PARAM_CONSTANT ( TID_STRING )              // tdim as string
@@ -97,68 +90,53 @@ namespace scidb4geo
             ADD_PARAM_VARIES()
         }
 
-
-        vector<std::shared_ptr<OperatorParamPlaceholder> > nextVaryParamPlaceholder ( const vector< ArrayDesc> &schemas ) {
-            
-
+        vector<std::shared_ptr<OperatorParamPlaceholder> > nextVaryParamPlaceholder(const vector<ArrayDesc> &schemas) {
             vector<std::shared_ptr<OperatorParamPlaceholder> > res;
 
-           
-            if (_parameters.size() ==  1) {
+            if (_parameters.size() == 1) {
                 //  2nd argument is either dim name or array reference
-                res.push_back ( PARAM_CONSTANT ( TID_STRING ) );
-                res.push_back ( PARAM_IN_ARRAY_NAME2 ( PLACEHOLDER_ARRAY_NAME_VERSION | PLACEHOLDER_ARRAY_NAME_INDEX_NAME ) );
-            }
-            else if (_parameters.size() ==  2) {
+                res.push_back(PARAM_CONSTANT(TID_STRING));
+                res.push_back(PARAM_IN_ARRAY_NAME2(PLACEHOLDER_ARRAY_NAME_VERSION | PLACEHOLDER_ARRAY_NAME_INDEX_NAME));
+            } else if (_parameters.size() == 2) {
                 //  3rd argument must be t0 if present
-                res.push_back ( END_OF_VARIES_PARAMS() );
-                res.push_back ( PARAM_CONSTANT ( TID_STRING ) );
-            }
-            else if ( _parameters.size() == 3 ) {
-                 //  4th argument must be dt if present
-                res.push_back ( PARAM_CONSTANT ( TID_STRING ) );
-            }
-            else  res.push_back ( END_OF_VARIES_PARAMS() );
-        
+                res.push_back(END_OF_VARIES_PARAMS());
+                res.push_back(PARAM_CONSTANT(TID_STRING));
+            } else if (_parameters.size() == 3) {
+                //  4th argument must be dt if present
+                res.push_back(PARAM_CONSTANT(TID_STRING));
+            } else
+                res.push_back(END_OF_VARIES_PARAMS());
+
             return res;
         }
 
+        ArrayDesc inferSchema(std::vector<ArrayDesc> schemas, std::shared_ptr<Query> query) {
+            // assert ( schemas.size() == 0 );
 
-
-
-        ArrayDesc inferSchema ( std::vector<ArrayDesc> schemas, std::shared_ptr<Query> query ) {
-           // assert ( schemas.size() == 0 );
-           
-           
             bool valid = false;
             valid = valid || (_parameters.size() == 4);
-            valid = valid || (_parameters.size() == 2 && _parameters[1]->getParamType() == PARAM_ARRAY_REF);                                            
+            valid = valid || (_parameters.size() == 2 && _parameters[1]->getParamType() == PARAM_ARRAY_REF);
             valid = valid && _parameters[0]->getParamType() == PARAM_ARRAY_REF;
-            
+
             if (!valid) {
-                 SCIDB4GEO_ERROR ( "Invalid call of eo_setsrs()", SCIDB4GEO_ERR_INVALIDINPUT);
-            }
-            
-            assert(valid);
-           
-            shared_ptr<OperatorParamArrayReference> &arrayRef = ( shared_ptr<OperatorParamArrayReference> & ) _parameters[0];
-            assert ( arrayRef->getArrayName().find ( '@' ) == string::npos );
-            assert ( arrayRef->getObjectName().find ( '@' ) == string::npos );
-            if ( arrayRef->getVersion() == ALL_VERSIONS ) {
-                throw USER_QUERY_EXCEPTION ( SCIDB_SE_INFER_SCHEMA, SCIDB_LE_WRONG_ASTERISK_USAGE2, _parameters[0]->getParsingContext() );
+                SCIDB4GEO_ERROR("Invalid call of eo_setsrs()", SCIDB4GEO_ERR_INVALIDINPUT);
             }
 
+            assert(valid);
+
+            shared_ptr<OperatorParamArrayReference> &arrayRef = (shared_ptr<OperatorParamArrayReference> &)_parameters[0];
+            assert(arrayRef->getArrayName().find('@') == string::npos);
+            assert(arrayRef->getObjectName().find('@') == string::npos);
+            if (arrayRef->getVersion() == ALL_VERSIONS) {
+                throw USER_QUERY_EXCEPTION(SCIDB_SE_INFER_SCHEMA, SCIDB_LE_WRONG_ASTERISK_USAGE2, _parameters[0]->getParsingContext());
+            }
 
             ArrayDesc schema;
             return schema;
         }
-
     };
 
-
-
-    REGISTER_LOGICAL_OPERATOR_FACTORY ( LogicalSetTRS, "eo_settrs" );
+    REGISTER_LOGICAL_OPERATOR_FACTORY(LogicalSetTRS, "eo_settrs");
     typedef LogicalSetTRS LogicalSetTRS_depr;
-    REGISTER_LOGICAL_OPERATOR_FACTORY ( LogicalSetTRS_depr, "st_settrs" ); // Backward compatibility
+    REGISTER_LOGICAL_OPERATOR_FACTORY(LogicalSetTRS_depr, "st_settrs");  // Backward compatibility
 }
-

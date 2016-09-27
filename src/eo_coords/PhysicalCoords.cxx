@@ -35,34 +35,29 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -----------------------------------------------------------------------------*/
 
-#include "query/Operator.h"
-#include "array/Metadata.h"
 #include "CoordsArray.h"
+#include "array/Metadata.h"
+#include "query/Operator.h"
 
 using namespace std;
 using namespace boost;
 using namespace scidb;
 
-namespace scidb4geo
-{
-    class PhysicalCoords: public PhysicalOperator
-    {
-    public:
-        PhysicalCoords ( const string &logicalName, const string &physicalName, const Parameters &parameters, const ArrayDesc &schema ) :
-            PhysicalOperator ( logicalName, physicalName, parameters, schema )
-        { }
+namespace scidb4geo {
+    class PhysicalCoords : public PhysicalOperator {
+       public:
+        PhysicalCoords(const string &logicalName, const string &physicalName, const Parameters &parameters, const ArrayDesc &schema) : PhysicalOperator(logicalName, physicalName, parameters, schema) {}
 
-        virtual PhysicalBoundaries getOutputBoundaries(const std::vector<PhysicalBoundaries> & inputBoundaries, const std::vector< ArrayDesc> & inputSchemas) const
-        {
+        virtual PhysicalBoundaries getOutputBoundaries(const std::vector<PhysicalBoundaries> &inputBoundaries, const std::vector<ArrayDesc> &inputSchemas) const {
             return inputBoundaries[0];
         }
-        
-        std::shared_ptr<Array> execute ( vector< std::shared_ptr<Array> > &inputArrays, std::shared_ptr<Query> query) {
-            assert ( inputArrays.size() == 1 );
-            assert ( _parameters.size() == 0 );
+
+        std::shared_ptr<Array> execute(vector<std::shared_ptr<Array> > &inputArrays, std::shared_ptr<Query> query) {
+            assert(inputArrays.size() == 1);
+            assert(_parameters.size() == 0);
             std::shared_ptr<Array> input = inputArrays[0];
-            return std::shared_ptr<Array> ( new CoordsArray ( query, input,  _schema, _tileMode) );
+            return std::shared_ptr<Array>(new CoordsArray(query, input, _schema, _tileMode));
         }
     };
-    REGISTER_PHYSICAL_OPERATOR_FACTORY ( PhysicalCoords, "eo_coords", "PhysicalCoords" );
+    REGISTER_PHYSICAL_OPERATOR_FACTORY(PhysicalCoords, "eo_coords", "PhysicalCoords");
 }

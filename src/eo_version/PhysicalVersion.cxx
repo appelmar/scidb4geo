@@ -35,71 +35,64 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -----------------------------------------------------------------------------*/
 
-#include "../plugin.h" // Must be first to define PROJECT_ROOT
+#include "../plugin.h"  // Must be first to define PROJECT_ROOT
 
 #include <string>
 
-#include "query/Operator.h"
 #include "array/TupleArray.h"
+#include "query/Operator.h"
 #include "system/SystemCatalog.h"
 
-
-
-namespace scidb4geo
-{
+namespace scidb4geo {
     using namespace std;
     using namespace boost;
     using namespace scidb;
 
     /*! @copydoc LogicalArrays
      */
-    class PhysicalVersion: public PhysicalOperator
-    {
-    public:
-        PhysicalVersion ( string &logicalName, const string &physicalName, const Parameters &parameters, const ArrayDesc &schema ) :
-            PhysicalOperator ( logicalName, physicalName, parameters, schema ) {
+    class PhysicalVersion : public PhysicalOperator {
+       public:
+        PhysicalVersion(string &logicalName, const string &physicalName, const Parameters &parameters, const ArrayDesc &schema) : PhysicalOperator(logicalName, physicalName, parameters, schema) {
         }
 
-        virtual RedistributeContext getOutputDistribution ( const std::vector<RedistributeContext> &inputDistributions,
-                const std::vector< ArrayDesc> &inputSchemas ) const {
-            return RedistributeContext ( psLocalInstance );
+        virtual RedistributeContext getOutputDistribution(const std::vector<RedistributeContext> &inputDistributions,
+                                                          const std::vector<ArrayDesc> &inputSchemas) const {
+            return RedistributeContext(psLocalInstance);
         }
 
-        void preSingleExecute ( std::shared_ptr<Query> query ) {
-            assert ( _parameters.size() == 0 );
+        void preSingleExecute(std::shared_ptr<Query> query) {
+            assert(_parameters.size() == 0);
 
-
-            std::shared_ptr<TupleArray> tuples ( std::make_shared<TupleArray> ( _schema, _arena ) );
+            std::shared_ptr<TupleArray> tuples(std::make_shared<TupleArray>(_schema, _arena));
             Value tuple[3];
             std::stringstream majstr, minstr, buildstr;
-            
-            majstr <<  SCIDB4GEO_VERSION_MAJOR;
-            tuple[0].setString ( majstr.str().c_str() );
-            
-            minstr <<  SCIDB4GEO_VERSION_MINOR;
-            tuple[1].setString ( minstr.str().c_str() );
-            
-            buildstr <<  __DATE__ <<  " " <<  __TIME__;
-            tuple[2].setString (buildstr.str().c_str());
-            
-            tuples->appendTuple ( tuple);
-            _result = tuples;
 
+            majstr << SCIDB4GEO_VERSION_MAJOR;
+            tuple[0].setString(majstr.str().c_str());
+
+            minstr << SCIDB4GEO_VERSION_MINOR;
+            tuple[1].setString(minstr.str().c_str());
+
+            buildstr << __DATE__ << " " << __TIME__;
+            tuple[2].setString(buildstr.str().c_str());
+
+            tuples->appendTuple(tuple);
+            _result = tuples;
         }
 
-        std::shared_ptr<Array> execute ( vector< std::shared_ptr<Array> > &inputArrays, std::shared_ptr<Query> query ) {
-            assert ( inputArrays.size() == 0 );
-            if ( !_result ) {
-                _result = std::make_shared<MemArray> ( _schema, query );
+        std::shared_ptr<Array> execute(vector<std::shared_ptr<Array> > &inputArrays, std::shared_ptr<Query> query) {
+            assert(inputArrays.size() == 0);
+            if (!_result) {
+                _result = std::make_shared<MemArray>(_schema, query);
             }
             return _result;
         }
 
-    private:
+       private:
         std::shared_ptr<Array> _result;
     };
 
-    REGISTER_PHYSICAL_OPERATOR_FACTORY ( PhysicalVersion, "eo_version", "PhysicalVersion" );
+    REGISTER_PHYSICAL_OPERATOR_FACTORY(PhysicalVersion, "eo_version", "PhysicalVersion");
     typedef PhysicalVersion PhysicalVersion_depr;
-    REGISTER_PHYSICAL_OPERATOR_FACTORY ( PhysicalVersion_depr, "st_version", "PhysicalVersion_depr" ); // Backward compatibility
-} //namespace
+    REGISTER_PHYSICAL_OPERATOR_FACTORY(PhysicalVersion_depr, "st_version", "PhysicalVersion_depr");  // Backward compatibility
+}  //namespace

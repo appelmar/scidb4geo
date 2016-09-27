@@ -35,121 +35,95 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -----------------------------------------------------------------------------*/
 
-#include "../plugin.h" // Must be first to define PROJECT_ROOT
+#include "../plugin.h"  // Must be first to define PROJECT_ROOT
 
 #include <boost/make_shared.hpp>
-#include "query/Operator.h"
-#include "array/TransientCache.h"
 #include "array/DBArray.h"
 #include "array/Metadata.h"
+#include "array/TransientCache.h"
+#include "query/Operator.h"
 #include "system/SystemCatalog.h"
 
 #include <log4cxx/logger.h>
 
-#include "../PostgresWrapper.h"
 #include "../ErrorCodes.h"
+#include "../PostgresWrapper.h"
 
 #include "../TemporalReference.h"
 
-namespace scidb4geo
-{
+namespace scidb4geo {
     using namespace std;
     using namespace scidb;
 
-    static log4cxx::LoggerPtr logger ( log4cxx::Logger::getLogger ( "scidb4geo.eo_settrs" ) );
-
+    static log4cxx::LoggerPtr logger(log4cxx::Logger::getLogger("scidb4geo.eo_settrs"));
 
     /*! @copydoc LogicalSetTRS
      */
-    class PhysicalSetTRS : public PhysicalOperator
-    {
-    public:
-        PhysicalSetTRS ( const string &logicalName, const string &physicalName, const Parameters &parameters, const ArrayDesc &schema ) :
-            PhysicalOperator ( logicalName, physicalName, parameters, schema ) {
-            _arrayName = ( ( std::shared_ptr<OperatorParamReference> & ) parameters[0] )->getObjectName();
+    class PhysicalSetTRS : public PhysicalOperator {
+       public:
+        PhysicalSetTRS(const string &logicalName, const string &physicalName, const Parameters &parameters, const ArrayDesc &schema) : PhysicalOperator(logicalName, physicalName, parameters, schema) {
+            _arrayName = ((std::shared_ptr<OperatorParamReference> &)parameters[0])->getObjectName();
         }
 
+        virtual void preSingleExecute(shared_ptr<Query> query) {
+            if (_schema.isTransient()) {
+                shared_ptr<const InstanceMembership> membership(Cluster::getInstance()->getInstanceMembership());
 
-
-
-        virtual void preSingleExecute ( shared_ptr<Query> query ) {
-
-
-            if ( _schema.isTransient() ) {
-                shared_ptr<const InstanceMembership> membership ( Cluster::getInstance()->getInstanceMembership() );
-
-                if ( ( membership->getViewId() != query->getCoordinatorLiveness()->getViewId() ) ||
-                        ( membership->getInstances().size() != query->getInstancesCount() ) ) {
-
-                    throw USER_EXCEPTION ( SCIDB_SE_EXECUTION, SCIDB_LE_NO_QUORUM2 );
+                if ((membership->getViewId() != query->getCoordinatorLiveness()->getViewId()) ||
+                    (membership->getInstances().size() != query->getInstancesCount())) {
+                    throw USER_EXCEPTION(SCIDB_SE_EXECUTION, SCIDB_LE_NO_QUORUM2);
                 }
             }
 
             // Construct SRS object out of parameters
 
             TemporalArrayInfo trs;
-            
-            
-            if (_parameters.size() ==  2) {
-                trs = PostgresWrapper::instance()->dbGetTemporalRefOrEmpty(ArrayDesc::makeUnversionedName ( ( ( std::shared_ptr<OperatorParamReference> & ) _parameters[1] )->getObjectName() ));
-            }
-            else {
-                
-             trs.tdim  = ( ( std::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[1] )->getExpression()->evaluate().getString();
-             trs.tref = new TReference(( ( std::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[2] )->getExpression()->evaluate().getString(), 
-               (( std::shared_ptr<OperatorParamPhysicalExpression> & ) _parameters[3] )->getExpression()->evaluate().getString());
 
-
+            if (_parameters.size() == 2) {
+                trs = PostgresWrapper::instance()->dbGetTemporalRefOrEmpty(ArrayDesc::makeUnversionedName(((std::shared_ptr<OperatorParamReference> &)_parameters[1])->getObjectName()));
+            } else {
+                trs.tdim = ((std::shared_ptr<OperatorParamPhysicalExpression> &)_parameters[1])->getExpression()->evaluate().getString();
+                trs.tref = new TReference(((std::shared_ptr<OperatorParamPhysicalExpression> &)_parameters[2])->getExpression()->evaluate().getString(),
+                                          ((std::shared_ptr<OperatorParamPhysicalExpression> &)_parameters[3])->getExpression()->evaluate().getString());
             }
-            
-            
-           
 
             // Check whether dimension exists
-	    ArrayDesc arrayDesc;
-	    SystemCatalog::getInstance()->getArrayDesc(_arrayName , query->getCatalogVersion(_arrayName ), LAST_VERSION, arrayDesc);
-//             ArrayID arrayId = SystemCatalog::getInstance()->findArrayByName ( _arrayName );
-//             std::shared_ptr<ArrayDesc> arrayDesc = SystemCatalog::getInstance()->getArrayDesc ( arrayId );
+            ArrayDesc arrayDesc;
+            SystemCatalog::getInstance()->getArrayDesc(_arrayName, query->getCatalogVersion(_arrayName), LAST_VERSION, arrayDesc);
+            //             ArrayID arrayId = SystemCatalog::getInstance()->findArrayByName ( _arrayName );
+            //             std::shared_ptr<ArrayDesc> arrayDesc = SystemCatalog::getInstance()->getArrayDesc ( arrayId );
             Dimensions dims = arrayDesc.getDimensions();
             bool dimOK = false;
-            for ( size_t i = 0; i < dims.size(); ++i ) {
-                if ( dims[i].getBaseName().compare ( trs.tdim ) == 0 ) {
+            for (size_t i = 0; i < dims.size(); ++i) {
+                if (dims[i].getBaseName().compare(trs.tdim) == 0) {
                     dimOK = true;
                     break;
                 }
             }
 
-            if ( !dimOK ) {
+            if (!dimOK) {
                 stringstream serr;
                 serr << "Dimension " << trs.tdim << " does not exist in target array.";
-                SCIDB4GEO_ERROR ( serr.str() , SCIDB4GEO_ERR_UNDECLARED_DIMENSION );
+                SCIDB4GEO_ERROR(serr.str(), SCIDB4GEO_ERR_UNDECLARED_DIMENSION);
             }
-
-
 
             //TODO: Add some checks
 
-            
-            PostgresWrapper::instance()->dbSetTemporalRef ( _arrayName, trs.tdim, trs.tref->getStart().toStringISO(), trs.tref->getCellsize().toStringISO() );
+            PostgresWrapper::instance()->dbSetTemporalRef(_arrayName, trs.tdim, trs.tref->getStart().toStringISO(), trs.tref->getCellsize().toStringISO());
 
-
-            
             delete trs.tref;
-
         }
 
-        std::shared_ptr< Array> execute ( std::vector< std::shared_ptr< Array> > &inputArrays,
-                                            std::shared_ptr<Query> query ) {
-            return std::shared_ptr< Array>();
+        std::shared_ptr<Array> execute(std::vector<std::shared_ptr<Array> > &inputArrays,
+                                       std::shared_ptr<Query> query) {
+            return std::shared_ptr<Array>();
         }
 
-
-    private:
+       private:
         string _arrayName;
     };
 
-    REGISTER_PHYSICAL_OPERATOR_FACTORY ( PhysicalSetTRS, "eo_settrs", "PhysicalSetTRS" );
+    REGISTER_PHYSICAL_OPERATOR_FACTORY(PhysicalSetTRS, "eo_settrs", "PhysicalSetTRS");
     typedef PhysicalSetTRS PhysicalSetTRS_depr;
-    REGISTER_PHYSICAL_OPERATOR_FACTORY ( PhysicalSetTRS_depr, "st_settrs", "PhysicalSetTRS_depr" ); // Backward compatibility
+    REGISTER_PHYSICAL_OPERATOR_FACTORY(PhysicalSetTRS_depr, "st_settrs", "PhysicalSetTRS_depr");  // Backward compatibility
 }
-

@@ -35,17 +35,15 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -----------------------------------------------------------------------------*/
 
-#include "../plugin.h" // Must be first to define PROJECT_ROOT
+#include "../plugin.h"  // Must be first to define PROJECT_ROOT
 
+#include "array/Metadata.h"
 #include "query/Operator.h"
 #include "system/Exceptions.h"
-#include "array/Metadata.h"
 #include "system/SystemCatalog.h"
 
 #include "../PostgresWrapper.h"
-namespace scidb4geo
-{
-
+namespace scidb4geo {
 
     using namespace std;
     using namespace boost;
@@ -73,41 +71,31 @@ namespace scidb4geo
      *   n/a
      *
      */
-    class LogicalArrays: public LogicalOperator
-    {
-    public:
-        LogicalArrays ( const string &logicalName, const std::string &alias ) :
-            LogicalOperator ( logicalName, alias ) {
+    class LogicalArrays : public LogicalOperator {
+       public:
+        LogicalArrays(const string &logicalName, const std::string &alias) : LogicalOperator(logicalName, alias) {
             //  This operator does not accept any parameters
         }
 
+        ArrayDesc inferSchema(std::vector<ArrayDesc> inputSchemas, std::shared_ptr<Query> query) {
+            assert(inputSchemas.size() == 0);
+            assert(_parameters.size() == 0);
 
+            Attributes attributes(2);
+            attributes[0] = AttributeDesc((AttributeID)0, "name", TID_STRING, 0, 0);
+            attributes[1] = AttributeDesc((AttributeID)1, "setting", TID_STRING, 0, 0);
 
-        ArrayDesc inferSchema ( std::vector< ArrayDesc> inputSchemas, std::shared_ptr< Query> query ) {
-            assert ( inputSchemas.size() == 0 );
-            assert ( _parameters.size() == 0 );
+            size_t nArrays = (size_t)PostgresWrapper::instance()->dbGetArrayCount();
 
+            vector<DimensionDesc> dimensions(1);
+            size_t end = nArrays > 0 ? nArrays - 1 : 0;
 
-            Attributes attributes ( 2 );
-            attributes[0] = AttributeDesc ( ( AttributeID ) 0, "name", TID_STRING, 0, 0 );
-            attributes[1] = AttributeDesc ( ( AttributeID ) 1, "setting", TID_STRING, 0, 0 );
-
-            size_t nArrays = ( size_t ) PostgresWrapper::instance()->dbGetArrayCount();
-
-
-            vector<DimensionDesc> dimensions ( 1 );
-            size_t end    = nArrays > 0 ? nArrays - 1 : 0;
-
-            dimensions[0] = DimensionDesc ( "i", 0, 0, end, end, nArrays, 0 );
-            return ArrayDesc ( "EOArray", attributes, dimensions, defaultPartitioning() );
+            dimensions[0] = DimensionDesc("i", 0, 0, end, end, nArrays, 0);
+            return ArrayDesc("EOArray", attributes, dimensions, defaultPartitioning());
         }
-
     };
 
-
-    REGISTER_LOGICAL_OPERATOR_FACTORY ( LogicalArrays, "eo_arrays" );
+    REGISTER_LOGICAL_OPERATOR_FACTORY(LogicalArrays, "eo_arrays");
     typedef LogicalArrays LogicalArrays_depr;
-    REGISTER_LOGICAL_OPERATOR_FACTORY ( LogicalArrays_depr, "st_arrays" ); // Backward compatibility
-
+    REGISTER_LOGICAL_OPERATOR_FACTORY(LogicalArrays_depr, "st_arrays");  // Backward compatibility
 }
-

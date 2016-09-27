@@ -35,128 +35,112 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -----------------------------------------------------------------------------*/
 
-#include "../plugin.h" // Must be first to define PROJECT_ROOT
+#include "../plugin.h"  // Must be first to define PROJECT_ROOT
 
 #include <string>
 
-#include "query/Operator.h"
 #include "array/TupleArray.h"
+#include "query/Operator.h"
 #include "system/SystemCatalog.h"
 
-#include "../TemporalReference.h"
 #include "../PostgresWrapper.h"
+#include "../TemporalReference.h"
 
-
-namespace scidb4geo
-{
+namespace scidb4geo {
     using namespace std;
     using namespace boost;
     using namespace scidb;
 
     /*! @copydoc LogicalOperator
      */
-    class PhysicalGetTRS: public PhysicalOperator
-    {
-    public:
-        PhysicalGetTRS ( string &logicalName, const string &physicalName, const Parameters &parameters, const ArrayDesc &schema ) :
-            PhysicalOperator ( logicalName, physicalName, parameters, schema ) {
+    class PhysicalGetTRS : public PhysicalOperator {
+       public:
+        PhysicalGetTRS(string &logicalName, const string &physicalName, const Parameters &parameters, const ArrayDesc &schema) : PhysicalOperator(logicalName, physicalName, parameters, schema) {
         }
 
-        virtual RedistributeContext getOutputDistribution ( const std::vector<RedistributeContext> &inputDistributions,
-                const std::vector< ArrayDesc> &inputSchemas ) const {
-            return RedistributeContext ( psLocalInstance );
+        virtual RedistributeContext getOutputDistribution(const std::vector<RedistributeContext> &inputDistributions,
+                                                          const std::vector<ArrayDesc> &inputSchemas) const {
+            return RedistributeContext(psLocalInstance);
         }
 
-        void preSingleExecute ( std::shared_ptr<Query> query ) {
-
-
-            vector<string> arrays ( _parameters.size() );
-            for ( uint16_t i = 0; i < _parameters.size(); ++i ) {
-                arrays.push_back ( ArrayDesc::makeUnversionedName ( ( ( std::shared_ptr<OperatorParamReference> & ) _parameters[i] )->getObjectName() ) );
+        void preSingleExecute(std::shared_ptr<Query> query) {
+            vector<string> arrays(_parameters.size());
+            for (uint16_t i = 0; i < _parameters.size(); ++i) {
+                arrays.push_back(ArrayDesc::makeUnversionedName(((std::shared_ptr<OperatorParamReference> &)_parameters[i])->getObjectName()));
             }
 
-            vector<TemporalArrayInfo> infolist = PostgresWrapper::instance()->dbGetTemporalRef ( arrays );
+            vector<TemporalArrayInfo> infolist = PostgresWrapper::instance()->dbGetTemporalRef(arrays);
 
-            std::shared_ptr<TupleArray> tuples ( std::make_shared<TupleArray> ( _schema, _arena ) );
+            std::shared_ptr<TupleArray> tuples(std::make_shared<TupleArray>(_schema, _arena));
 
-            for ( uint8_t i = 0; i < infolist.size(); ++i ) {
-
+            for (uint8_t i = 0; i < infolist.size(); ++i) {
                 // TODO: Error handling
 
                 Value tuple[6];
-                tuple[0].setString ( infolist[i].arrayname );
-                tuple[1].setString ( infolist[i].tdim );
-                tuple[2].setString ( infolist[i].tref->getStart().toStringISO() );
-                tuple[3].setString ( infolist[i].tref->getCellsize().toStringISO() );
-                tuple[4].setString ( "" );
-                tuple[5].setString ( "" );
+                tuple[0].setString(infolist[i].arrayname);
+                tuple[1].setString(infolist[i].tdim);
+                tuple[2].setString(infolist[i].tref->getStart().toStringISO());
+                tuple[3].setString(infolist[i].tref->getCellsize().toStringISO());
+                tuple[4].setString("");
+                tuple[5].setString("");
 
-		
-		ArrayDesc arrayDesc;
-	       SystemCatalog::getInstance()->getArrayDesc(infolist[i].arrayname , query->getCatalogVersion(infolist[i].arrayname ), LAST_VERSION, arrayDesc);
-//                 ArrayID arrayId = SystemCatalog::getInstance()->findArrayByName ( infolist[i].arrayname );
-//                 std::shared_ptr<ArrayDesc> arrayDesc = SystemCatalog::getInstance()->getArrayDesc ( arrayId );
+                ArrayDesc arrayDesc;
+                SystemCatalog::getInstance()->getArrayDesc(infolist[i].arrayname, query->getCatalogVersion(infolist[i].arrayname), LAST_VERSION, arrayDesc);
+                //                 ArrayID arrayId = SystemCatalog::getInstance()->findArrayByName ( infolist[i].arrayname );
+                //                 std::shared_ptr<ArrayDesc> arrayDesc = SystemCatalog::getInstance()->getArrayDesc ( arrayId );
                 Dimensions dims = arrayDesc.getDimensions();
                 DimensionDesc d;
                 int tdim_idx = -1;
 
                 // Find temporal dimensions
-                for ( size_t j = 0; j < dims.size(); ++j ) {
+                for (size_t j = 0; j < dims.size(); ++j) {
                     d = dims[j];
-                    if ( d.getBaseName().compare ( infolist[i].tdim ) == 0 ) tdim_idx = j;
-
+                    if (d.getBaseName().compare(infolist[i].tdim) == 0) tdim_idx = j;
                 }
 
-                if ( tdim_idx < 0 ) {
-                    tuple[4].setString ( "NA" );
-                    tuple[5].setString ( "NA" );
-                }
-                else {
-                    Coordinates lowBoundary = SystemCatalog::getInstance()->getLowBoundary ( arrayDesc.getId() );
-                    Coordinates highBoundary = SystemCatalog::getInstance()->getHighBoundary ( arrayDesc.getId() );
+                if (tdim_idx < 0) {
+                    tuple[4].setString("NA");
+                    tuple[5].setString("NA");
+                } else {
+                    Coordinates lowBoundary = SystemCatalog::getInstance()->getLowBoundary(arrayDesc.getId());
+                    Coordinates highBoundary = SystemCatalog::getInstance()->getHighBoundary(arrayDesc.getId());
 
                     /* Array bounds might be unknown und thus equal maximum int64 values.
                      The followoing loop tries to find better values based on dimension settings */
-                    for ( size_t j = 0; j < dims.size(); ++j ) {
-                        if ( abs ( lowBoundary[j] ) == SCIDB_MAXDIMINDEX ) {
+                    for (size_t j = 0; j < dims.size(); ++j) {
+                        if (abs(lowBoundary[j]) == SCIDB_MAXDIMINDEX) {
                             lowBoundary[j] = dims[j].getCurrStart();
-                            if ( abs ( lowBoundary[j] ) == SCIDB_MAXDIMINDEX ) lowBoundary[j] = dims[j].getStartMin();
+                            if (abs(lowBoundary[j]) == SCIDB_MAXDIMINDEX) lowBoundary[j] = dims[j].getStartMin();
                         }
-                        if ( abs ( highBoundary[j] ) == SCIDB_MAXDIMINDEX ) {
+                        if (abs(highBoundary[j]) == SCIDB_MAXDIMINDEX) {
                             highBoundary[j] = dims[j].getCurrEnd();
-                            if ( abs ( highBoundary[j] ) == SCIDB_MAXDIMINDEX ) highBoundary[j] = dims[j].getEndMax();
+                            if (abs(highBoundary[j]) == SCIDB_MAXDIMINDEX) highBoundary[j] = dims[j].getEndMax();
                         }
                     }
-                    tuple[4].setString ( infolist[i].tref->datetimeAtIndex ( lowBoundary[tdim_idx] ).toStringISO() );
-                    tuple[5].setString ( infolist[i].tref->datetimeAtIndex ( highBoundary[tdim_idx] ).toStringISO() );
+                    tuple[4].setString(infolist[i].tref->datetimeAtIndex(lowBoundary[tdim_idx]).toStringISO());
+                    tuple[5].setString(infolist[i].tref->datetimeAtIndex(highBoundary[tdim_idx]).toStringISO());
                     delete infolist[i].tref;
                 }
 
-
-                tuples->appendTuple ( tuple );
-
-
+                tuples->appendTuple(tuple);
             }
 
             _result = tuples;
-
-
         }
 
-        std::shared_ptr<Array> execute ( vector< std::shared_ptr<Array> > &inputArrays, std::shared_ptr<Query> query ) {
-            assert ( inputArrays.size() == 0 );
-            if ( !_result ) {
-                _result = std::make_shared<MemArray> ( _schema, query );
+        std::shared_ptr<Array> execute(vector<std::shared_ptr<Array> > &inputArrays, std::shared_ptr<Query> query) {
+            assert(inputArrays.size() == 0);
+            if (!_result) {
+                _result = std::make_shared<MemArray>(_schema, query);
             }
             return _result;
         }
 
-    private:
+       private:
         std::shared_ptr<Array> _result;
     };
 
-    REGISTER_PHYSICAL_OPERATOR_FACTORY ( PhysicalGetTRS, "eo_gettrs", "PhysicalGetTRS" );
+    REGISTER_PHYSICAL_OPERATOR_FACTORY(PhysicalGetTRS, "eo_gettrs", "PhysicalGetTRS");
     typedef PhysicalGetTRS PhysicalGetTRS_depr;
-    REGISTER_PHYSICAL_OPERATOR_FACTORY ( PhysicalGetTRS_depr, "st_gettrs", "PhysicalGetTRS_depr" ); // Backward compatibility
+    REGISTER_PHYSICAL_OPERATOR_FACTORY(PhysicalGetTRS_depr, "st_gettrs", "PhysicalGetTRS_depr");  // Backward compatibility
 }
-
