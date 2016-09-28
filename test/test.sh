@@ -20,6 +20,7 @@
 
 TESTARRAY=scidb4geo_test_$( date +%Y%m%d_%H%M%S )
 iquery -anq "remove(${TESTARRAY});" > /dev/null 2>&1
+iquery -anq "load_library('scidb4geo');" > /dev/null 2>&1
 iquery -anq "store(build(<val:double>[lat=0:179,256,0,lon=0:359,256,0, t=0:31,16,0],1),${TESTARRAY});" > /dev/null 2>&1
 
 rm test.out > /dev/null 2>&1
@@ -32,7 +33,7 @@ iquery -o csv:l -aq "eo_setsrs(${TESTARRAY},'lon','lat','EPSG',4326,'x0=-180 y0=
 echo "Query was executed successfully" > test.expected
 if diff test.out test.expected > /dev/null 2>&1; then echo "eo_setsrs()... successful"; else echo "eo_setsrs()... failed"; fi
 
-# 2. eo_setrs
+# 2. eo_settrs
 iquery -o csv:l -aq "eo_settrs(${TESTARRAY},'t','2016-01-01', 'P1D');" > test.out
 echo "Query was executed successfully" > test.expected
 if diff test.out test.expected > /dev/null 2>&1; then echo "eo_settrs()... successful"; else echo "eo_settrs()... failed"; fi
@@ -60,6 +61,35 @@ iquery -o csv:l -aq "set no timer;filter(eo_arrays(),name='${TESTARRAY}');" > te
 echo "name,setting" > test.expected
 echo "'${TESTARRAY}','st'" >> test.expected
 if diff test.out test.expected > /dev/null 2>&1; then echo "eo_arrays()... successful"; else echo "eo_arrays()... failed"; fi
+
+# 7. eo_over
+TESTARRAY_TARGET=scidb4geo_test_A_$( date +%Y%m%d_%H%M%S )
+TESTARRAY_SRC=scidb4geo_test_B_$( date +%Y%m%d_%H%M%S )
+iquery -anq "remove(${TESTARRAY_TARGET});" > /dev/null 2>&1
+iquery -anq "remove(${TESTARRAY_SRC});" > /dev/null 2>&1
+iquery -anq "store(build(<val:double>[lat=0:179,256,0,lon=0:359,256,0, t=0:31,16,0],1),${TESTARRAY_TARGET});" > /dev/null 2>&1
+iquery -anq "store(build(<val:double>[lat=0:179,256,0,lon=0:359,256,0, t=0:31,16,0],1),${TESTARRAY_SRC});" > /dev/null 2>&1
+iquery -anq "eo_setsrs(${TESTARRAY_TARGET},'lon','lat','EPSG',4326,'x0=-180 y0=90 a11=1 a22=-1');" >  /dev/null 2>&1
+iquery -anq "eo_setsrs(${TESTARRAY_SRC},'lon','lat','EPSG',4326,'x0=-180 y0=90 a11=1 a22=-1');" >  /dev/null 2>&1
+iquery -anq "eo_settrs(${TESTARRAY_TARGET},'t','2016-01-01', 'P1D');" >  /dev/null 2>&1
+iquery -anq "eo_settrs(${TESTARRAY_SRC},'t','2016-01-01', 'P1D');" >  /dev/null 2>&1
+iquery -o csv:l -aq "between(eo_over(${TESTARRAY_SRC},${TESTARRAY_TARGET}),10,12,4, 10,12,4);" > test.out
+echo "over_x,over_y,over_t" > test.expected
+echo "12,10,4" >> test.expected
+if diff test.out test.expected > /dev/null 2>&1; then echo "eo_over()... successful"; else echo "eo_over()... failed"; fi
+
+# 8. eo_coords
+iquery -o csv:l -aq "project(filter(eo_coords(${TESTARRAY}), lat = 10 and lon = 10 and t=5), eo_x,eo_y,eo_t);" > test.out
+echo "eo_x,eo_y,eo_t" > test.expected
+echo "-170,80,'2016-01-06T00:00:00'" >> test.expected
+if diff test.out test.expected > /dev/null 2>&1; then echo "eo_coords()... successful"; else echo "eo_coords()... failed"; fi
+
+
+
+echo "Cleaning up..."
+iquery -anq "remove(${TESTARRAY});" > /dev/null 2>&1
+iquery -anq "remove(${TESTARRAY_TARGET});" > /dev/null 2>&1
+iquery -anq "remove(${TESTARRAY_SRC});" > /dev/null 2>&1
 
 rm test.out > /dev/null 2>&1
 rm test.expected > /dev/null 2>&1

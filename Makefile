@@ -70,7 +70,9 @@ SRCS+= src/eo_extent/LogicalExtent.cxx src/eo_extent/PhysicalExtent.cxx
 SRCS+= src/eo_over/OverArray.cxx src/eo_over/LogicalOver.cxx src/eo_over/PhysicalOver.cxx
 SRCS+= src/eo_setmd/LogicalSetMD.cxx src/eo_setmd/PhysicalSetMD.cxx
 SRCS+= src/eo_getmd/LogicalGetMD.cxx src/eo_getmd/PhysicalGetMD.cxx
-SRCS+= src/eo_cpsrs/LogicalCpSRS.cxx src/eo_cpsrs/PhysicalCpSRS.cxx 
+SRCS+= src/eo_version/LogicalVersion.cxx src/eo_version/PhysicalVersion.cxx 
+SRCS+= src/eo_coords/CoordsArray.cxx src/eo_coords/LogicalCoords.cxx src/eo_coords/PhysicalCoords.cxx 
+#SRCS+= src/eo_cpsrs/LogicalCpSRS.cxx src/eo_cpsrs/PhysicalCpSRS.cxx 
 #SRCS+= src/eo_extend/ExtendArray.cxx src/eo_extend/LogicalExtend.cxx src/eo_extend/PhysicalExtend.cxx 
 SRCS+= src/PostgresWrapper.cxx src/AffineTransform.cxx src/TemporalReference.cxx src/ErrorCodes.cxx
 
@@ -105,3 +107,10 @@ clean:
 
 install: 
 	cd install && chmod +x setup.sh && yes | ./setup.sh $(SCIDB)/etc/config.ini && cp  ../libscidb4geo.so "$(SCIDB)/lib/scidb/plugins"
+	@echo "DONE. Please remember to restart SciDB."
+deploy:
+	cp  libscidb4geo.so "$(SCIDB)/lib/scidb/plugins"
+	@echo "DONE. Please remember to restart SciDB."
+format:
+	find src/ -type f -not -path "src/extern/*" -iname *.h  -exec clang-format-3.8 -i -style=file {} \;
+	find src/ -type f -not -path "src/extern/*" -iname *.cxx  -exec clang-format-3.8 -i -style=file {} \;

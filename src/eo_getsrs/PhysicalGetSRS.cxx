@@ -35,88 +35,79 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -----------------------------------------------------------------------------*/
 
-#include "../plugin.h" // Must be first to define PROJECT_ROOT
+#include "../plugin.h"  // Must be first to define PROJECT_ROOT
 
 #include <string>
 
-#include "query/Operator.h"
 #include "array/TupleArray.h"
+#include "query/Operator.h"
 #include "system/SystemCatalog.h"
 
 #include "../PostgresWrapper.h"
 
-namespace scidb4geo
-{
+namespace scidb4geo {
     using namespace std;
     using namespace boost;
     using namespace scidb;
 
     /*! @copydoc LogicalOperator
      */
-    class PhysicalGetSRS: public PhysicalOperator
-    {
-    public:
-        PhysicalGetSRS ( string &logicalName, const string &physicalName, const Parameters &parameters, const ArrayDesc &schema ) :
-            PhysicalOperator ( logicalName, physicalName, parameters, schema ) {
+    class PhysicalGetSRS : public PhysicalOperator {
+       public:
+        PhysicalGetSRS(string &logicalName, const string &physicalName, const Parameters &parameters, const ArrayDesc &schema) : PhysicalOperator(logicalName, physicalName, parameters, schema) {
         }
 
-        virtual RedistributeContext getOutputDistribution ( const std::vector<RedistributeContext> &inputDistributions,
-                const std::vector< ArrayDesc> &inputSchemas ) const {
-            return RedistributeContext(_schema.getDistribution(),_schema.getResidency());
+        virtual RedistributeContext getOutputDistribution(const std::vector<RedistributeContext> &inputDistributions,
+                                                          const std::vector<ArrayDesc> &inputSchemas) const {
+            return RedistributeContext(_schema.getDistribution(), _schema.getResidency());
         }
 
-        void preSingleExecute ( std::shared_ptr<Query> query ) {
-
-            vector<string> arrays ( _parameters.size() );
-            vector<string> namespaces ( _parameters.size() );
-            for ( uint16_t i = 0; i < _parameters.size(); ++i ) {
-                
-                
+        void preSingleExecute(std::shared_ptr<Query> query) {
+            vector<string> arrays(_parameters.size());
+            vector<string> namespaces(_parameters.size());
+            for (uint16_t i = 0; i < _parameters.size(); ++i) {
                 string arrayName;
                 string namespaceName;
-                std::shared_ptr<OperatorParamArrayReference> &arrayRef = ( std::shared_ptr<OperatorParamArrayReference> & ) _parameters[i];
+                std::shared_ptr<OperatorParamArrayReference> &arrayRef = (std::shared_ptr<OperatorParamArrayReference> &)_parameters[i];
 
                 query->getNamespaceArrayNames(arrayRef->getObjectName(), namespaceName, arrayName);
-                
-                arrays.push_back ( arrayName );
-                namespaces.push_back( namespaceName );
+
+                arrays.push_back(arrayName);
+                namespaces.push_back(namespaceName);
             }
-            
-            vector<SpatialArrayInfo> infolist = PostgresWrapper::instance()->dbGetSpatialRef ( arrays );
 
-            std::shared_ptr<TupleArray> tuples ( std::make_shared<TupleArray> ( _schema, _arena ) );
+            vector<SpatialArrayInfo> infolist = PostgresWrapper::instance()->dbGetSpatialRef(arrays);
 
-            for ( uint8_t i = 0; i < infolist.size(); ++i ) {
+            std::shared_ptr<TupleArray> tuples(std::make_shared<TupleArray>(_schema, _arena));
+
+            for (uint8_t i = 0; i < infolist.size(); ++i) {
                 Value tuple[8];
-                tuple[0].setString ( infolist[i].arrayname );
-                tuple[1].setString ( infolist[i].xdim );
-                tuple[2].setString ( infolist[i].ydim );
-                tuple[3].setString ( infolist[i].auth_name );
-                tuple[4].setInt32 ( ( int32_t ) infolist[i].auth_srid );
-                tuple[5].setString ( infolist[i].srtext );
-                tuple[6].setString ( infolist[i].proj4text );
-                tuple[7].setString ( infolist[i].A.toString() );
-                tuples->appendTuple ( tuple );
-
+                tuple[0].setString(infolist[i].arrayname);
+                tuple[1].setString(infolist[i].xdim);
+                tuple[2].setString(infolist[i].ydim);
+                tuple[3].setString(infolist[i].auth_name);
+                tuple[4].setInt32((int32_t)infolist[i].auth_srid);
+                tuple[5].setString(infolist[i].srtext);
+                tuple[6].setString(infolist[i].proj4text);
+                tuple[7].setString(infolist[i].A.toString());
+                tuples->appendTuple(tuple);
             }
 
             _result = tuples;
-
         }
 
-        std::shared_ptr<Array> execute ( vector< std::shared_ptr<Array> > &inputArrays, std::shared_ptr<Query> query ) {
-            if ( !_result ) {
-                _result = std::make_shared<MemArray> ( _schema, query );
+        std::shared_ptr<Array> execute(vector<std::shared_ptr<Array> > &inputArrays, std::shared_ptr<Query> query) {
+            if (!_result) {
+                _result = std::make_shared<MemArray>(_schema, query);
             }
             return _result;
         }
 
-    private:
+       private:
         std::shared_ptr<Array> _result;
     };
 
-    REGISTER_PHYSICAL_OPERATOR_FACTORY ( PhysicalGetSRS, "eo_getsrs", "PhysicalGetSRS" );
+    REGISTER_PHYSICAL_OPERATOR_FACTORY(PhysicalGetSRS, "eo_getsrs", "PhysicalGetSRS");
     typedef PhysicalGetSRS PhysicalGetSRS_depr;
-    REGISTER_PHYSICAL_OPERATOR_FACTORY ( PhysicalGetSRS_depr, "st_getsrs", "PhysicalGetSRS_depr" ); // Backward compatibility
+    REGISTER_PHYSICAL_OPERATOR_FACTORY(PhysicalGetSRS_depr, "st_getsrs", "PhysicalGetSRS_depr");  // Backward compatibility
 }
-

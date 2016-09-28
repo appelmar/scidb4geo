@@ -1,6 +1,8 @@
-##eo_settrs()
+##eo_cpsrs()
 
 Copies the spatial reference of a source array to a target array.
+
+**DEPRECATED** (use `eo_setsrs(target, source)` instead)
 
 ###Synopsis
 ```

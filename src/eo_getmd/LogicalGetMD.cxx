@@ -35,65 +35,54 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -----------------------------------------------------------------------------*/
 
-#include "../plugin.h" // Must be first to define PROJECT_ROOT
+#include "../plugin.h"  // Must be first to define PROJECT_ROOT
 
+#include "array/Metadata.h"
 #include "query/Operator.h"
 #include "system/Exceptions.h"
-#include "array/Metadata.h"
 #include "system/SystemCatalog.h"
 
 #include "../PostgresWrapper.h"
-namespace scidb4geo
-{
-
+namespace scidb4geo {
 
     using namespace std;
     using namespace boost;
     using namespace scidb;
 
-
-
-    class LogicalGetMD: public LogicalOperator
-    {
-    public:
-        LogicalGetMD ( const string &logicalName, const std::string &alias ) :
-            LogicalOperator ( logicalName, alias ) {
-            ADD_PARAM_IN_ARRAY_NAME2 ( PLACEHOLDER_ARRAY_NAME_VERSION | PLACEHOLDER_ARRAY_NAME_INDEX_NAME ) // Arrayname will be stored in _parameters[0]
-//             ADD_PARAM_VARIES() // Expect a variable list of parameters (all named arrays)
+    class LogicalGetMD : public LogicalOperator {
+       public:
+        LogicalGetMD(const string &logicalName, const std::string &alias) : LogicalOperator(logicalName, alias) {
+            ADD_PARAM_IN_ARRAY_NAME2(PLACEHOLDER_ARRAY_NAME_VERSION | PLACEHOLDER_ARRAY_NAME_INDEX_NAME)  // Arrayname will be stored in _parameters[0]
+                                                                                                          //             ADD_PARAM_VARIES() // Expect a variable list of parameters (all named arrays)
         }
 
-//         vector<std::shared_ptr<OperatorParamPlaceholder> > nextVaryParamPlaceholder ( const vector< ArrayDesc> &schemas ) {
-//             vector<std::shared_ptr<OperatorParamPlaceholder> > res;
-//             if ( _parameters.size() == 1 ) {
-//                 res.push_back ( PARAM_CONSTANT ( TID_STRING ) );
-//             }
-//             res.push_back ( END_OF_VARIES_PARAMS() );
-//             return res;
-//         }
+        //         vector<std::shared_ptr<OperatorParamPlaceholder> > nextVaryParamPlaceholder ( const vector< ArrayDesc> &schemas ) {
+        //             vector<std::shared_ptr<OperatorParamPlaceholder> > res;
+        //             if ( _parameters.size() == 1 ) {
+        //                 res.push_back ( PARAM_CONSTANT ( TID_STRING ) );
+        //             }
+        //             res.push_back ( END_OF_VARIES_PARAMS() );
+        //             return res;
+        //         }
 
+        ArrayDesc inferSchema(std::vector<ArrayDesc> inputSchemas, std::shared_ptr<Query> query) {
+            assert(inputSchemas.size() == 0);
 
-        ArrayDesc inferSchema ( std::vector< ArrayDesc> inputSchemas, std::shared_ptr< Query> query ) {
-            assert ( inputSchemas.size() == 0 );
+            Attributes attributes(5);
+            attributes[0] = AttributeDesc((AttributeID)0, "array", TID_STRING, 0, 0);
+            attributes[1] = AttributeDesc((AttributeID)1, "attribute", TID_STRING, 0, 0);
+            attributes[2] = AttributeDesc((AttributeID)2, "domain", TID_STRING, 0, 0);
+            attributes[3] = AttributeDesc((AttributeID)3, "key", TID_STRING, 0, 0);
+            attributes[4] = AttributeDesc((AttributeID)4, "value", TID_STRING, 0, 0);
 
-            Attributes attributes ( 5 );
-            attributes[0] = AttributeDesc ( ( AttributeID ) 0, "array", TID_STRING, 0, 0 );
-            attributes[1] = AttributeDesc ( ( AttributeID ) 1, "attribute", TID_STRING, 0, 0 );
-            attributes[2] = AttributeDesc ( ( AttributeID ) 2, "domain", TID_STRING, 0, 0 );
-            attributes[3] = AttributeDesc ( ( AttributeID ) 3, "key", TID_STRING, 0, 0 );
-            attributes[4] = AttributeDesc ( ( AttributeID ) 4, "value", TID_STRING, 0, 0 );
+            vector<DimensionDesc> dimensions(1);
+            dimensions[0] = DimensionDesc("i", 0, 65536, 1024, 0);
 
-
-            vector<DimensionDesc> dimensions ( 1 );
-            dimensions[0] = DimensionDesc ( "i", 0, 65536, 1024, 0 );
-            
             stringstream ss;
             ss << query->getInstanceID();
-            ArrayDistPtr localDist = ArrayDistributionFactory::getInstance()->construct(psLocalInstance, DEFAULT_REDUNDANCY,ss.str());
-            return ArrayDesc ( "Array MD", attributes, dimensions, localDist,  query->getDefaultArrayResidency());   
+            ArrayDistPtr localDist = ArrayDistributionFactory::getInstance()->construct(psLocalInstance, DEFAULT_REDUNDANCY, ss.str());
+            return ArrayDesc("Array MD", attributes, dimensions, localDist, query->getDefaultArrayResidency());
         }
-
     };
-    REGISTER_LOGICAL_OPERATOR_FACTORY ( LogicalGetMD, "eo_getmd" );
-
+    REGISTER_LOGICAL_OPERATOR_FACTORY(LogicalGetMD, "eo_getmd");
 }
-

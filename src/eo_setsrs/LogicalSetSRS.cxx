@@ -35,23 +35,21 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -----------------------------------------------------------------------------*/
 
-#include "../plugin.h" // Must be first to define PROJECT_ROOT
+#include "../plugin.h"  // Must be first to define PROJECT_ROOT
 
 #include "log4cxx/logger.h"
+
 #include "../ErrorCodes.h"
 #include "query/Operator.h"
-#include "system/SystemCatalog.h"
 #include "system/Exceptions.h"
-#include <usr_namespace/Permissions.h>
+#include "system/SystemCatalog.h"
 
-namespace scidb4geo
-{
-
+namespace scidb4geo {
 
     using namespace std;
     using namespace scidb;
 
-    static log4cxx::LoggerPtr logger ( log4cxx::Logger::getLogger ( "scidb4geo.setSpatialRef" ) );
+    static log4cxx::LoggerPtr logger(log4cxx::Logger::getLogger("scidb4geo.setSpatialRef"));
 
     /**
      * @brief SciDB Operator eo_setsrs().
@@ -86,72 +84,87 @@ namespace scidb4geo
      *
      *
      */
-    class LogicalSetSRS: public LogicalOperator
-    {
-    public:
-        LogicalSetSRS ( const string &logicalName, const string &alias ) :
-            LogicalOperator ( logicalName, alias ) {
-                
-            _properties.exclusive = true;
-            _properties.ddl = true;
-            ADD_PARAM_IN_ARRAY_NAME()
+    class LogicalSetSRS : public LogicalOperator {
+       public:
+        LogicalSetSRS(const string &logicalName, const string &alias) : LogicalOperator(logicalName, alias) {
+            ADD_PARAM_IN_ARRAY_NAME2(PLACEHOLDER_ARRAY_NAME_VERSION | PLACEHOLDER_ARRAY_NAME_INDEX_NAME)  // Arrayname will be stored in _parameters[0]
             //ADD_PARAM_IN_DIMENSION_NAME()
             //ADD_PARAM_IN_DIMENSION_NAME()
-            ADD_PARAM_CONSTANT ( TID_STRING ) // xdim as string
-            ADD_PARAM_CONSTANT ( TID_STRING ) // ydim as string
+            //ADD_PARAM_CONSTANT ( TID_STRING )              // xdim as string
+            // ADD_PARAM_CONSTANT ( TID_STRING )              // ydim as string
             ADD_PARAM_VARIES()
         }
 
-
-        vector<std::shared_ptr<OperatorParamPlaceholder> > nextVaryParamPlaceholder ( const vector< ArrayDesc> &schemas ) {
+        vector<std::shared_ptr<OperatorParamPlaceholder> > nextVaryParamPlaceholder(const vector<ArrayDesc> &schemas) {
             vector<std::shared_ptr<OperatorParamPlaceholder> > res;
 
-            // Par 4: String or integer (either affine_transform_string or auth_srid)
-            if ( _parameters.size() == 3 ) {
-                res.push_back ( PARAM_CONSTANT ( TID_STRING ) );
+            if (_parameters.size() == 1) {
+                //  2nd argument is either dim name or array reference
+                res.push_back(PARAM_CONSTANT(TID_STRING));
+                res.push_back(PARAM_IN_ARRAY_NAME2(PLACEHOLDER_ARRAY_NAME_VERSION | PLACEHOLDER_ARRAY_NAME_INDEX_NAME));
+            } else if (_parameters.size() == 2) {
+                //  3rd argument must be dim name if present
+                res.push_back(END_OF_VARIES_PARAMS());
+                res.push_back(PARAM_CONSTANT(TID_STRING));
             }
-            else if ( _parameters.size() == 4 ) {
+
+            // Par 4: String or integer (either affine_transform_string or auth_srid)
+            else if (_parameters.size() == 3) {
+                res.push_back(PARAM_CONSTANT(TID_STRING));
+            } else if (_parameters.size() == 4) {
                 //res.push_back(PARAM_CONSTANT(TID_STRING));
-                res.push_back ( PARAM_CONSTANT ( TID_INT32 ) );
+                res.push_back(PARAM_CONSTANT(TID_INT32));
             }
             // Par 6: String or empty (either affine_transform_string or nothing)
-            else if ( _parameters.size() == 5 ) {
-
-                res.push_back ( PARAM_CONSTANT ( TID_STRING ) );
-                res.push_back ( END_OF_VARIES_PARAMS() );
-            }
-            else  res.push_back ( END_OF_VARIES_PARAMS() );
+            else if (_parameters.size() == 5) {
+                res.push_back(PARAM_CONSTANT(TID_STRING));
+                res.push_back(END_OF_VARIES_PARAMS());
+            } else
+                res.push_back(END_OF_VARIES_PARAMS());
 
             return res;
         }
 
+        ArrayDesc inferSchema(std::vector<ArrayDesc> schemas, std::shared_ptr<Query> query) {
+            //assert ( schemas.size() == 0 );
 
+            bool valid = false;
+            valid = valid || (_parameters.size() == 5);
+            //                 && _parameters[1]->getParamType() == PARAM_CONSTANT ( TID_STRING )
+            //                 && _parameters[2]->getParamType() == PARAM_CONSTANT ( TID_STRING )
+            //                 && _parameters[2]->getParamType() == PARAM_CONSTANT ( TID_STRING )
+            //                 && _parameters[2]->getParamType() == PARAM_CONSTANT ( TID_INT32 );
 
+            valid = valid || (_parameters.size() == 6);
+            //                 && _parameters[1]->getParamType() == PARAM_CONSTANT ( TID_STRING )
+            //                 && _parameters[2]->getParamType() == PARAM_CONSTANT ( TID_STRING )
+            //                 && _parameters[2]->getParamType() == PARAM_CONSTANT ( TID_STRING )
+            //                 && _parameters[2]->getParamType() == PARAM_CONSTANT ( TID_INT32 )
+            //                 && _parameters[2]->getParamType() == PARAM_CONSTANT ( TID_STRING );
 
+            valid = valid || (_parameters.size() == 2 && _parameters[1]->getParamType() == PARAM_ARRAY_REF);
+            valid = valid && _parameters[0]->getParamType() == PARAM_ARRAY_REF;
 
-
-        ArrayDesc inferSchema ( std::vector<ArrayDesc> schemas, std::shared_ptr<Query> query ) {
-            assert ( schemas.size() == 0 );
-            assert ( _parameters.size() == 5 || _parameters.size() == 6 );
-            assert ( _parameters[0]->getParamType() == PARAM_ARRAY_REF );
-            shared_ptr<OperatorParamArrayReference> &arrayRef = ( shared_ptr<OperatorParamArrayReference> & ) _parameters[0];
-            assert ( arrayRef->getObjectName().find ( '@' ) == string::npos );
-            if ( arrayRef->getVersion() == ALL_VERSIONS ) {
-                throw USER_QUERY_EXCEPTION ( SCIDB_SE_INFER_SCHEMA, SCIDB_LE_WRONG_ASTERISK_USAGE2, _parameters[0]->getParsingContext() );
+            if (!valid) {
+                SCIDB4GEO_ERROR("Invalid call of eo_setsrs()", SCIDB4GEO_ERR_INVALIDINPUT);
             }
 
+            assert(valid);
+
+            shared_ptr<OperatorParamArrayReference> &arrayRef = (shared_ptr<OperatorParamArrayReference> &)_parameters[0];
+            assert(arrayRef->getArrayName().find('@') == string::npos);
+            assert(arrayRef->getObjectName().find('@') == string::npos);
+            if (arrayRef->getVersion() == ALL_VERSIONS) {
+                throw USER_QUERY_EXCEPTION(SCIDB_SE_INFER_SCHEMA, SCIDB_LE_WRONG_ASTERISK_USAGE2, _parameters[0]->getParsingContext());
+            }
             ArrayDesc schema;
             schema.setDistribution(defaultPartitioning());
             schema.setResidency(query->getDefaultArrayResidency());
             return schema;
         }
-        
     };
 
-
-
-    REGISTER_LOGICAL_OPERATOR_FACTORY ( LogicalSetSRS, "eo_setsrs" );
+    REGISTER_LOGICAL_OPERATOR_FACTORY(LogicalSetSRS, "eo_setsrs");
     typedef LogicalSetSRS LogicalSetSRS_depr;
-    REGISTER_LOGICAL_OPERATOR_FACTORY ( LogicalSetSRS_depr, "st_setsrs" ); // Backward compatibility
+    REGISTER_LOGICAL_OPERATOR_FACTORY(LogicalSetSRS_depr, "st_setsrs");  // Backward compatibility
 }
-

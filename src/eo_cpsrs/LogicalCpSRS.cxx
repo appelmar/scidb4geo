@@ -35,20 +35,19 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -----------------------------------------------------------------------------*/
 
-#include "../plugin.h" // Must be first to define PROJECT_ROOT
+#include "../plugin.h"  // Must be first to define PROJECT_ROOT
 
 #include "log4cxx/logger.h"
 
 #include "query/Operator.h"
-#include "system/SystemCatalog.h"
 #include "system/Exceptions.h"
+#include "system/SystemCatalog.h"
 
-namespace scidb4geo
-{
+namespace scidb4geo {
     using namespace std;
     using namespace scidb;
 
-    static log4cxx::LoggerPtr logger ( log4cxx::Logger::getLogger ( "scidb4geo.setSpatialRef" ) );
+    static log4cxx::LoggerPtr logger(log4cxx::Logger::getLogger("scidb4geo.setSpatialRef"));
 
     /**
      * @brief SciDB Operator eo_cpsrs().
@@ -74,106 +73,89 @@ namespace scidb4geo
      *
      *
      */
-    class LogicalCpSRS: public LogicalOperator
-    {
-    public:
-        LogicalCpSRS ( const string &logicalName, const string &alias ) :
-            LogicalOperator ( logicalName, alias ) {
-
+    class LogicalCpSRS : public LogicalOperator {
+       public:
+        LogicalCpSRS(const string &logicalName, const string &alias) : LogicalOperator(logicalName, alias) {
             _properties.exclusive = true;
             _properties.ddl = true;
 
-            ADD_PARAM_IN_ARRAY_NAME ( ) // Arrayname will be stored in _parameters[0]
-            ADD_PARAM_IN_ARRAY_NAME ( ) // Arrayname will be stored in _parameters[1]
-
+            ADD_PARAM_IN_ARRAY_NAME()  // Arrayname will be stored in _parameters[0]
+            ADD_PARAM_IN_ARRAY_NAME()  // Arrayname will be stored in _parameters[1]
         }
 
+        //         void inferArrayAccess ( std::shared_ptr<Query> &query ) {
+        //             LogicalOperator::inferArrayAccess ( query );
+        //
+        //             assert ( _parameters.size() == 2 );
+        //             assert ( _parameters[0]->getParamType() == PARAM_ARRAY_REF && _parameters[1]->getParamType() == PARAM_ARRAY_REF );
+        //
+        //
+        //
+        //             shared_ptr<OperatorParamArrayReference> &arrayRefFrom = ( shared_ptr<OperatorParamArrayReference> & ) _parameters[0];
+        //             shared_ptr<OperatorParamArrayReference> &arrayRefTo = ( shared_ptr<OperatorParamArrayReference> & ) _parameters[0];
+        //
+        //             assert ( arrayRefFrom->getObjectName().find ( '@' ) == std::string::npos );
+        //             assert ( arrayRefFrom->getObjectName().find ( '@' ) == std::string::npos );
+        //
+        //             query->getNamespaceArrayNames(arrayRefFrom->getObjectName(), _namespaceNameFrom, _arrayNameFrom);
+        //             query->getNamespaceArrayNames(arrayRefTo->getObjectName(), _namespaceNameTo, _arrayNameTo);
+        //
+        //
+        //
+        //
+        //             ArrayDesc descFrom;
+        //             ArrayDesc descTo;
+        //
+        //
+        //
+        //
+        // 	   // SystemCatalog::getInstance()->getArrayDesc(arrayNameFrom, query->getCatalogVersion(arrayNameFrom), LAST_VERSION, descFrom);
+        // 	   // SystemCatalog::getInstance()->getArrayDesc(arrayNameTo, query->getCatalogVersion(arrayNameTo), LAST_VERSION, descTo);
+        //
+        //
+        //
+        //
+        //             if ( descTo.isTransient() ) {
+        //                 std::shared_ptr<SystemCatalog::LockDesc> lock ( std::make_shared<SystemCatalog::LockDesc> ( arrayNameTo,
+        //                         query->getQueryID(),
+        //                         Cluster::getInstance()->getLocalInstanceId(),
+        //                         SystemCatalog::LockDesc::COORD,
+        //                         SystemCatalog::LockDesc::WR ) );
+        //                 std::shared_ptr<SystemCatalog::LockDesc> resLock ( query->requestLock ( lock ) );
+        //
+        //                 assert ( resLock );
+        //                 assert ( resLock->getLockMode() >= SystemCatalog::LockDesc::WR );
+        //             }
+        //             else {
+        //                 LogicalOperator::inferArrayAccess ( query ); // take read lock as per usual
+        //             }
+        //         }
 
+        ArrayDesc inferSchema(std::vector<ArrayDesc> schemas, std::shared_ptr<Query> query) {
+            assert(schemas.size() == 0);
+            assert(_parameters.size() == 2);
+            assert(_parameters[0]->getParamType() == PARAM_ARRAY_REF && _parameters[1]->getParamType() == PARAM_ARRAY_REF);
 
-//         void inferArrayAccess ( std::shared_ptr<Query> &query ) {
-//             LogicalOperator::inferArrayAccess ( query );
-// 
-//             assert ( _parameters.size() == 2 );
-//             assert ( _parameters[0]->getParamType() == PARAM_ARRAY_REF && _parameters[1]->getParamType() == PARAM_ARRAY_REF );
-// 
-//             
-//                   
-//             shared_ptr<OperatorParamArrayReference> &arrayRefFrom = ( shared_ptr<OperatorParamArrayReference> & ) _parameters[0];
-//             shared_ptr<OperatorParamArrayReference> &arrayRefTo = ( shared_ptr<OperatorParamArrayReference> & ) _parameters[0];
-//             
-//             assert ( arrayRefFrom->getObjectName().find ( '@' ) == std::string::npos );
-//             assert ( arrayRefFrom->getObjectName().find ( '@' ) == std::string::npos );
-//             
-//             query->getNamespaceArrayNames(arrayRefFrom->getObjectName(), _namespaceNameFrom, _arrayNameFrom);
-//             query->getNamespaceArrayNames(arrayRefTo->getObjectName(), _namespaceNameTo, _arrayNameTo);
-//             
-//            
-//             
-// 
-//             ArrayDesc descFrom;
-//             ArrayDesc descTo;
-// 
-// 
-//             
-//             
-// 	   // SystemCatalog::getInstance()->getArrayDesc(arrayNameFrom, query->getCatalogVersion(arrayNameFrom), LAST_VERSION, descFrom);
-// 	   // SystemCatalog::getInstance()->getArrayDesc(arrayNameTo, query->getCatalogVersion(arrayNameTo), LAST_VERSION, descTo);
-//             
-//             
-//             
-// 	    
-//             if ( descTo.isTransient() ) {
-//                 std::shared_ptr<SystemCatalog::LockDesc> lock ( std::make_shared<SystemCatalog::LockDesc> ( arrayNameTo,
-//                         query->getQueryID(),
-//                         Cluster::getInstance()->getLocalInstanceId(),
-//                         SystemCatalog::LockDesc::COORD,
-//                         SystemCatalog::LockDesc::WR ) );
-//                 std::shared_ptr<SystemCatalog::LockDesc> resLock ( query->requestLock ( lock ) );
-// 
-//                 assert ( resLock );
-//                 assert ( resLock->getLockMode() >= SystemCatalog::LockDesc::WR );
-//             }
-//             else {
-//                 LogicalOperator::inferArrayAccess ( query ); // take read lock as per usual
-//             }
-//         }
+            shared_ptr<OperatorParamArrayReference> &arrayFromRef = (shared_ptr<OperatorParamArrayReference> &)_parameters[0];
+            shared_ptr<OperatorParamArrayReference> &arrayToRef = (shared_ptr<OperatorParamArrayReference> &)_parameters[1];
 
-
-
-
-
-        ArrayDesc inferSchema ( std::vector<ArrayDesc> schemas, std::shared_ptr<Query> query ) {
-            assert ( schemas.size() == 0 );
-            assert ( _parameters.size() == 2 );
-            assert ( _parameters[0]->getParamType() == PARAM_ARRAY_REF && _parameters[1]->getParamType() == PARAM_ARRAY_REF );
-
-            shared_ptr<OperatorParamArrayReference> &arrayFromRef = ( shared_ptr<OperatorParamArrayReference> & ) _parameters[0];
-            shared_ptr<OperatorParamArrayReference> &arrayToRef = ( shared_ptr<OperatorParamArrayReference> & ) _parameters[1];
-
-            assert ( arrayFromRef->getObjectName().find ( '@' ) == string::npos );
-            assert ( arrayToRef->getObjectName().find ( '@' ) == string::npos );
-
-
+            assert(arrayFromRef->getObjectName().find('@') == string::npos);
+            assert(arrayToRef->getObjectName().find('@') == string::npos);
 
             ArrayDesc schema;
             schema.setDistribution(defaultPartitioning());
             schema.setResidency(query->getDefaultArrayResidency());
             return schema;
         }
-        
-        
-        
-//     private:
-//         string _arrayNameFrom;
-//         string _namespaceNameFrom;
-//         string _arrayNameTo;
-//         string _namespaceNameTo;
+
+        //     private:
+        //         string _arrayNameFrom;
+        //         string _namespaceNameFrom;
+        //         string _arrayNameTo;
+        //         string _namespaceNameTo;
     };
 
-    REGISTER_LOGICAL_OPERATOR_FACTORY ( LogicalCpSRS, "eo_cpsrs" );
+    REGISTER_LOGICAL_OPERATOR_FACTORY(LogicalCpSRS, "eo_cpsrs");
     typedef LogicalCpSRS LogicalCpSRS_depr;
-    REGISTER_LOGICAL_OPERATOR_FACTORY ( LogicalCpSRS_depr, "st_cpsrs" ); // Backward compatibility
-
-
+    REGISTER_LOGICAL_OPERATOR_FACTORY(LogicalCpSRS_depr, "st_cpsrs");  // Backward compatibility
 }
-

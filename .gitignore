@@ -27,3 +27,4 @@ doc/operators/.Rhistory
 install/libscidb4geo.so
 libscidb4geo.so
 scidb4geo_bin.tar.gz
+*.kdev4

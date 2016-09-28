@@ -35,22 +35,19 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -----------------------------------------------------------------------------*/
 
-#include "../plugin.h" // Must be first to define PROJECT_ROOT
+#include "../plugin.h"  // Must be first to define PROJECT_ROOT
 
+#include "array/Metadata.h"
 #include "query/Operator.h"
 #include "system/Exceptions.h"
-#include "array/Metadata.h"
 #include "system/SystemCatalog.h"
 
 #include "../PostgresWrapper.h"
-namespace scidb4geo
-{
-
+namespace scidb4geo {
 
     using namespace std;
     using namespace boost;
     using namespace scidb;
-
 
     /**
     * @brief SciDB Operator eo_getsrs().
@@ -75,52 +72,46 @@ namespace scidb4geo
     *
     *
     */
-    class LogicalGetSRS: public LogicalOperator
-    {
-    public:
-        LogicalGetSRS ( const string &logicalName, const std::string &alias ) :
-            LogicalOperator ( logicalName, alias ) {
-            ADD_PARAM_VARIES() // Expect a variable list of parameters (all named arrays)
+    class LogicalGetSRS : public LogicalOperator {
+       public:
+        LogicalGetSRS(const string &logicalName, const std::string &alias) : LogicalOperator(logicalName, alias) {
+            ADD_PARAM_VARIES()  // Expect a variable list of parameters (all named arrays)
         }
 
-        vector<std::shared_ptr<OperatorParamPlaceholder> > nextVaryParamPlaceholder ( const vector< ArrayDesc> &schemas ) {
+        vector<std::shared_ptr<OperatorParamPlaceholder> > nextVaryParamPlaceholder(const vector<ArrayDesc> &schemas) {
             vector<std::shared_ptr<OperatorParamPlaceholder> > res;
-            res.push_back ( PARAM_IN_ARRAY_NAME() );
-            res.push_back ( END_OF_VARIES_PARAMS() );
+            res.push_back(PARAM_IN_ARRAY_NAME());
+            res.push_back(END_OF_VARIES_PARAMS());
             return res;
         }
 
+        ArrayDesc inferSchema(std::vector<ArrayDesc> inputSchemas, std::shared_ptr<Query> query) {
+            assert(inputSchemas.size() == 0);
 
-        ArrayDesc inferSchema ( std::vector< ArrayDesc> inputSchemas, std::shared_ptr< Query> query ) {
-            assert ( inputSchemas.size() == 0 );
-
-            Attributes attributes ( 8 );
-            attributes[0] = AttributeDesc ( ( AttributeID ) 0, "name", TID_STRING, 0, 0 );
-            attributes[1] = AttributeDesc ( ( AttributeID ) 1, "xdim", TID_STRING, 0, 0 );
-            attributes[2] = AttributeDesc ( ( AttributeID ) 2, "ydim", TID_STRING, 0, 0 );
-            attributes[3] = AttributeDesc ( ( AttributeID ) 3, "auth_name", TID_STRING, 0, 0 );
-            attributes[4] = AttributeDesc ( ( AttributeID ) 4, "auth_srid", TID_INT32, 0, 0 );
-            attributes[5] = AttributeDesc ( ( AttributeID ) 5, "srtext", TID_STRING, 0, 0 );
-            attributes[6] = AttributeDesc ( ( AttributeID ) 6, "proj4text", TID_STRING, 0, 0 );
-            attributes[7] = AttributeDesc ( ( AttributeID ) 7, "A", TID_STRING, 0, 0 );
+            Attributes attributes(8);
+            attributes[0] = AttributeDesc((AttributeID)0, "name", TID_STRING, 0, 0);
+            attributes[1] = AttributeDesc((AttributeID)1, "xdim", TID_STRING, 0, 0);
+            attributes[2] = AttributeDesc((AttributeID)2, "ydim", TID_STRING, 0, 0);
+            attributes[3] = AttributeDesc((AttributeID)3, "auth_name", TID_STRING, 0, 0);
+            attributes[4] = AttributeDesc((AttributeID)4, "auth_srid", TID_INT32, 0, 0);
+            attributes[5] = AttributeDesc((AttributeID)5, "srtext", TID_STRING, 0, 0);
+            attributes[6] = AttributeDesc((AttributeID)6, "proj4text", TID_STRING, 0, 0);
+            attributes[7] = AttributeDesc((AttributeID)7, "A", TID_STRING, 0, 0);
 
             size_t nArrays = _parameters.size();
-            if ( nArrays == 0 ) nArrays = ( size_t ) PostgresWrapper::instance()->dbGetSpatialRefCount();
+            if (nArrays == 0) nArrays = (size_t)PostgresWrapper::instance()->dbGetSpatialRefCount();
 
-            size_t end    = nArrays > 0 ? nArrays - 1 : 0;
-            vector<DimensionDesc> dimensions ( 1 );
-            dimensions[0] = DimensionDesc ( "i", 0, 0, end, end, nArrays, 0 );
+            size_t end = nArrays > 0 ? nArrays - 1 : 0;
+            vector<DimensionDesc> dimensions(1);
+            dimensions[0] = DimensionDesc("i", 0, 0, end, end, nArrays, 0);
 
             stringstream ss;
             ss << query->getInstanceID();
-            ArrayDistPtr localDist = ArrayDistributionFactory::getInstance()->construct(psLocalInstance, DEFAULT_REDUNDANCY,ss.str());
-            return ArrayDesc (  "Spatial Array", attributes, dimensions, localDist,  query->getDefaultArrayResidency());   
+            ArrayDistPtr localDist = ArrayDistributionFactory::getInstance()->construct(psLocalInstance, DEFAULT_REDUNDANCY, ss.str());
+            return ArrayDesc("Spatial Array", attributes, dimensions, localDist, query->getDefaultArrayResidency());
         }
-
     };
-    REGISTER_LOGICAL_OPERATOR_FACTORY ( LogicalGetSRS, "eo_getsrs" );
+    REGISTER_LOGICAL_OPERATOR_FACTORY(LogicalGetSRS, "eo_getsrs");
     typedef LogicalGetSRS LogicalGetSRS_depr;
-    REGISTER_LOGICAL_OPERATOR_FACTORY ( LogicalGetSRS_depr, "st_getsrs" ); // Backward compatibility
-
+    REGISTER_LOGICAL_OPERATOR_FACTORY(LogicalGetSRS_depr, "st_getsrs");  // Backward compatibility
 }
-

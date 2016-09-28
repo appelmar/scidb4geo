@@ -16,62 +16,60 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -----------------------------------------------------------------------------*/
 
-
 #ifndef TEMPORAL_REFERENCE_H
 #define TEMPORAL_REFERENCE_H
 
-
-#include <sstream>
-#include <string>
 #include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/date_time/gregorian/gregorian.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/lexical_cast.hpp>
+#include <sstream>
+#include <string>
 
-namespace scidb4geo
-{
+namespace scidb4geo {
 
     using namespace std;
 
-
     // Enumeration to model the granularitiy of temporal references
-    enum TResolution {NONE, YEAR, MONTH, WEEK, DAY, HOUR, MINUTE, SECOND, FRACTION};
-
+    enum TResolution { NONE,
+                       YEAR,
+                       MONTH,
+                       WEEK,
+                       DAY,
+                       HOUR,
+                       MINUTE,
+                       SECOND,
+                       FRACTION };
 
     // Forward declarations
     class TPoint;
     class TInterval;
     class TReference;
 
-
     /**
      * Class that represents a point in time with variable resolution
      */
-    class TPoint
-    {
-        friend TPoint operator+ ( const TPoint &l, const TInterval &r );
-        friend TPoint operator+ ( const TInterval &l, const TPoint &r );
-        friend TPoint operator- ( const TPoint &l, const TInterval &r );
-        friend TPoint operator- ( const TInterval &l, const TPoint &r );
+    class TPoint {
+        friend TPoint operator+(const TPoint &l, const TInterval &r);
+        friend TPoint operator+(const TInterval &l, const TPoint &r);
+        friend TPoint operator-(const TPoint &l, const TInterval &r);
+        friend TPoint operator-(const TInterval &l, const TPoint &r);
 
         friend class TReference;
 
-    public:
-
-
-        TPoint ( );
+       public:
+        TPoint();
 
         /**
          * Construction from ISO 8601 string
          * @param str ISO 8601 string
          **/
-        TPoint ( string str );
+        TPoint(string str);
 
         /**
         * ISO 8601 string output
         **/
         string toStringISO();
-
 
         boost::posix_time::ptime _pt;
 
@@ -80,35 +78,21 @@ namespace scidb4geo
         **/
         TResolution _resolution;
 
-
-
-    private:
+       private:
         void init();
         int _year, _month, _week, _doy, _dow, _dom, _hour, _minute, _second, _fraction;
         int _tz_hour, _tz_minute;
-
-
-
-
-
-
-
     };
 
-    class TInterval
-    {
-
+    class TInterval {
         friend class TReference;
 
-        friend TInterval operator+ ( const TInterval &l, const TInterval &r );
-        friend TInterval operator- ( const TInterval &l, const TInterval &r );
-        friend TInterval operator* ( const TInterval &l, const int &r );
-        friend TInterval operator* ( const int &l, const TInterval &r );
+        friend TInterval operator+(const TInterval &l, const TInterval &r);
+        friend TInterval operator-(const TInterval &l, const TInterval &r);
+        friend TInterval operator*(const TInterval &l, const int &r);
+        friend TInterval operator*(const int &l, const TInterval &r);
 
-
-    public:
-
-
+       public:
         /**
          * Default constructor creates a time interval that equals 0.
          **/
@@ -118,7 +102,7 @@ namespace scidb4geo
         * Construction from ISO 8601 string.
         * @param str ISO 8601 string
         **/
-        TInterval ( string str );
+        TInterval(string str);
 
         /**
         * Duration given as number of months. Months vary in its number of days.
@@ -131,11 +115,10 @@ namespace scidb4geo
         **/
         int _yd;
 
-
         /**
         * Duration given as number of days. Days may or may not count the same number of seconds.
         **/
-        boost::gregorian::date_duration  _dd;
+        boost::gregorian::date_duration _dd;
 
         /**
         * Exact posix time difference (seconds).
@@ -152,21 +135,16 @@ namespace scidb4geo
         **/
         std::string toStringISO();
 
-    private:
+       private:
         void init();
     };
-
-
-
-
 
     /**
      * Class that stores the temporal reference of an array, i.e. a start point and the cell size.
      * Methods to derive the (integer) dimension value for a given date / time and to get the date / time at a specific index are provided.
     **/
-    class TReference
-    {
-    public:
+    class TReference {
+       public:
         /**
         * Construction of a temporal reference based on a start point and a duration
          * representing the temporal distance between two neighbouring array cells. Based on
@@ -178,44 +156,38 @@ namespace scidb4geo
          * (Bad) Examples: P1MT1H (1 month + 1 hour)
          * (Good) Examples: P1M, P1Y6M, P16D, PT1H, PT30M, PT100S
          **/
-        TReference ( );
-        TReference ( string t0text, string dttext );
+        TReference();
+        TReference(string t0text, string dttext);
         ~TReference();
 
         /**
          * Returns the start date/time, i.e. the date/time at dimension index 0
         **/
-        TPoint     getStart();
+        TPoint getStart();
 
         /**
          * Returns the temporal distance between neighbouring cells
         **/
-        TInterval  getCellsize();
+        TInterval getCellsize();
 
         /**
          * Returns the date/time at a given index
         **/
-        TPoint     datetimeAtIndex ( int index );
+        TPoint datetimeAtIndex(int index);
 
         /**
          * Returns the index at a specific date/time.
          * Cells are assumed as temporal periods (i.e. with a start and end time/date)
          * within which values do not change.
         **/
-        int64_t    indexAtDatetime ( TPoint &t );
+        int64_t indexAtDatetime(TPoint &t);
 
-    private:
+       private:
         TPoint *_t0;
         TInterval *_dt;
 
         TResolution _r;
-
-
     };
-
-
-
 }
 
 #endif
-

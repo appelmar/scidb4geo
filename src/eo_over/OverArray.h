@@ -41,14 +41,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include <vector>
 
-#include "array/Metadata.h"
 #include "array/DelegateArray.h"
+#include "array/Metadata.h"
 
-#include "../PostgresWrapper.h"
 #include "../ErrorCodes.h"
+#include "../PostgresWrapper.h"
 
-namespace scidb4geo
-{
+namespace scidb4geo {
 
     using namespace std;
     using namespace scidb;
@@ -58,22 +57,21 @@ namespace scidb4geo
     class OverArrayIterator;
     class OverChunkIterator;
 
-    class OverChunk : public ConstChunk
-    {
-    public:
+    class OverChunk : public ConstChunk {
+       public:
         virtual const ArrayDesc &getArrayDesc() const;
         virtual const AttributeDesc &getAttributeDesc() const;
-        virtual Coordinates const &getFirstPosition ( bool withOverlap ) const;
-        virtual Coordinates const &getLastPosition ( bool withOverlap ) const;
-        virtual std::shared_ptr<ConstChunkIterator> getConstIterator ( int iterationMode ) const;
+        virtual Coordinates const &getFirstPosition(bool withOverlap) const;
+        virtual Coordinates const &getLastPosition(bool withOverlap) const;
+        virtual std::shared_ptr<ConstChunkIterator> getConstIterator(int iterationMode) const;
         virtual int getCompressionMethod() const;
         virtual Array const &getArray() const;
 
-        void setPosition ( Coordinates const &pos );
+        void setPosition(Coordinates const &pos);
 
-        OverChunk ( OverArray &array, AttributeID attrID );
+        OverChunk(OverArray &array, AttributeID attrID);
 
-    private:
+       private:
         OverArray &array;
         Coordinates p_first;
         Coordinates p_last;
@@ -82,25 +80,24 @@ namespace scidb4geo
         AttributeID attr_id;
     };
 
-    class OverChunkIterator : public ConstChunkIterator
-    {
-    public:
+    class OverChunkIterator : public ConstChunkIterator {
+       public:
         virtual int getMode() const;
         virtual bool isEmpty() const;
         virtual Value &getItem();
-        virtual void operator ++();
+        virtual void operator++();
         virtual bool end();
         virtual Coordinates const &getPosition();
-        virtual bool setPosition ( Coordinates const &pos );
+        virtual bool setPosition(Coordinates const &pos);
         virtual void reset();
         ConstChunk const &getChunk();
         virtual std::shared_ptr<Query> getQuery() {
             return _query;
         }
 
-        OverChunkIterator ( OverArray &array, ConstChunk const *chunk, AttributeID attrID, int iterationMode );
+        OverChunkIterator(OverArray &array, ConstChunk const *chunk, AttributeID attrID, int iterationMode);
 
-    private:
+       private:
         int iterationMode;
         OverArray &array;
         Coordinates const &p_first;
@@ -122,21 +119,20 @@ namespace scidb4geo
         AffineTransform::double2 _p_out;
     };
 
-    class OverArrayIterator : public ConstArrayIterator
-    {
+    class OverArrayIterator : public ConstArrayIterator {
         friend class OverChunkIterator;
 
-    public:
+       public:
         virtual ConstChunk const &getChunk();
         virtual bool end();
-        virtual void operator ++();
+        virtual void operator++();
         virtual Coordinates const &getPosition();
-        virtual bool setPosition ( Coordinates const &pos );
+        virtual bool setPosition(Coordinates const &pos);
         virtual void reset();
 
-        OverArrayIterator ( OverArray &array, AttributeID id );
+        OverArrayIterator(OverArray &array, AttributeID id);
 
-    private:
+       private:
         void nextChunk();
 
         OverArray &array;
@@ -147,23 +143,17 @@ namespace scidb4geo
         Coordinates currPos;
     };
 
-
-
-
-
-    class OverArray : public Array
-    {
+    class OverArray : public Array {
         friend class OverArrayIterator;
         friend class OverChunkIterator;
         friend class OverChunk;
 
-    public:
-        OverArray ( std::shared_ptr<Query> &query, ArrayDesc const &descA, ArrayDesc const &descB, ArrayDesc const &descC );
+       public:
+        OverArray(std::shared_ptr<Query> &query, ArrayDesc const &descA, ArrayDesc const &descB, ArrayDesc const &descC);
         virtual ArrayDesc const &getArrayDesc() const;
-        virtual std::shared_ptr<ConstArrayIterator> getConstIterator ( AttributeID attr ) const;
+        virtual std::shared_ptr<ConstArrayIterator> getConstIterator(AttributeID attr) const;
 
-    private:
-
+       private:
         ArrayDesc _desc_A, _desc_B, _desc_C;
 
         int _xidx_A;
@@ -173,16 +163,14 @@ namespace scidb4geo
         int _tidx_A;
         int _tidx_B;
 
-        SpatialArrayInfo  _srs_A;
-        SpatialArrayInfo  _srs_B;
+        SpatialArrayInfo _srs_A;
+        SpatialArrayInfo _srs_B;
         TemporalArrayInfo _trs_A;
         TemporalArrayInfo _trs_B;
 
         uint32_t _ninstances;
         uint64_t _instance_id;
-
     };
-
 }
 
 #endif

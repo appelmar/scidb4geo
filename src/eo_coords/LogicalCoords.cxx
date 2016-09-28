@@ -1,5 +1,5 @@
 /*
-This file has been originally based on source code of SciDB (src/query/ops/build/LogicalBuild.cpp)
+This file has been originally based on source code of SciDB (src/query/ops/apply/LogicalApply.cpp)
 which is copyright (C) 2008-2014 SciDB, Inc.
 
 SciDB is free software: you can redistribute it and/or modify
@@ -15,7 +15,7 @@ You should have received a copy of the AFFERO GNU General Public License
 along with SciDB.  If not, see <http://www.gnu.org/licenses/agpl-3.0.html>
 
 -----------------------------------------------------------------------------
-Modification date: (2015-08-01)
+Modification date: (2016-09-26)
 
 Modifications are copyright (C) 2016 Marius Appel <marius.appel@uni-muenster.de>
 
@@ -45,43 +45,47 @@ using namespace scidb;
 
 namespace scidb4geo {
 
-    class LogicalOver : public LogicalOperator {
+    class LogicalCoords : public LogicalOperator {
        public:
-        LogicalOver(const string &logicalName, const std::string &alias) : LogicalOperator(logicalName, alias) {
-            ADD_PARAM_INPUT()
+        LogicalCoords(const string &logicalName, const std::string &alias) : LogicalOperator(logicalName, alias) {
+            _properties.tile = false;
             ADD_PARAM_INPUT()
         }
 
         ArrayDesc inferSchema(std::vector<ArrayDesc> schemas, std::shared_ptr<Query> query) {
-            assert(schemas.size() == 2);
+            assert(schemas.size() == 1);
             assert(_parameters.size() == 0);
 
-            if (ArrayDesc::makeUnversionedName(schemas[0].getName()).compare("") == 0 ||
-                ArrayDesc::makeUnversionedName(schemas[1].getName()).compare("") == 0 ||
-                ArrayDesc::makeUnversionedName(schemas[0].getName()).compare(ArrayDesc::makeUnversionedName(schemas[1].getName())) == 0) {
-                SCIDB4GEO_ERROR("Operator works on two different persistent input arrays", SCIDB4GEO_ERR_INVALIDINPUT);
-            }
+            //             if ( ArrayDesc::makeUnversionedName ( schemas[0].getName() ).compare ( "" ) == 0 ||
+            //                     ArrayDesc::makeUnversionedName ( schemas[1].getName() ).compare ( "" ) == 0 ||
+            //                     ArrayDesc::makeUnversionedName ( schemas[0].getName() ).compare ( ArrayDesc::makeUnversionedName ( schemas[1].getName() ) ) == 0 ) {
+            //                 SCIDB4GEO_ERROR ( "Operator works on two different persistent input arrays", SCIDB4GEO_ERR_INVALIDINPUT );
+            //             }
 
             // Check dimensions
             Dimensions const &dims = schemas[0].getDimensions();
 
-            for (size_t i = 0, n = dims.size(); i < n; i++) {
-                if (dims[i].isMaxStar()) {
-                    SCIDB4GEO_ERROR("Operator works only on bounded dimensions", SCIDB4GEO_ERR_INVALIDDIMENSION);
+            Attributes outAttrs;
+            AttributeID nextAttrId = 0;
+            for (size_t i = 0; i < schemas[0].getAttributes().size(); i++) {
+                AttributeDesc const &attr = schemas[0].getAttributes()[i];
+                if (attr.getType() != TID_INDICATOR) {
+                    outAttrs.push_back(AttributeDesc(nextAttrId++,
+                                                     attr.getName(),
+                                                     attr.getType(),
+                                                     attr.getFlags(),
+                                                     attr.getDefaultCompressionMethod(),
+                                                     attr.getAliases(),
+                                                     attr.getReserve(),
+                                                     &attr.getDefaultValue(),
+                                                     attr.getDefaultValueExpr(),
+                                                     attr.getVarSize()));
                 }
             }
 
-            Attributes outAttrs;
-
-            //             outAttrs.push_back ( AttributeDesc ( ( AttributeID ) 0, ArrayDesc::makeUnversionedName(schemas[1].getName()) + ".x", TID_INT64, AttributeDesc::IS_NULLABLE, 0 ) ); // TODO: Change name to target dimension name?!
-            //             outAttrs.push_back ( AttributeDesc ( ( AttributeID ) 1, ArrayDesc::makeUnversionedName(schemas[1].getName()) + ".y", TID_INT64, AttributeDesc::IS_NULLABLE, 0 ) ); // TODO: Change name to target dimension name?!
-            outAttrs.push_back(AttributeDesc((AttributeID)0, "over_x", TID_INT64, AttributeDesc::IS_NULLABLE, 0));  // TODO: Change name to target dimension name?!
-            outAttrs.push_back(AttributeDesc((AttributeID)1, "over_y", TID_INT64, AttributeDesc::IS_NULLABLE, 0));  // TODO: Change name to target dimension name?!
-            outAttrs.push_back(AttributeDesc((AttributeID)2, "over_t", TID_INT64, AttributeDesc::IS_NULLABLE, 0));  // TODO: Change name to target dimension name?!
-
             if (schemas[0].getEmptyBitmapAttribute()) {
                 AttributeDesc const *emptyTag = schemas[0].getEmptyBitmapAttribute();
-                outAttrs.push_back(AttributeDesc((AttributeID)3,
+                outAttrs.push_back(AttributeDesc((AttributeID)nextAttrId++,
                                                  emptyTag->getName(),
                                                  emptyTag->getType(),
                                                  emptyTag->getFlags(),
@@ -92,11 +96,16 @@ namespace scidb4geo {
                                                  emptyTag->getDefaultValueExpr(),
                                                  emptyTag->getVarSize()));
             }
+
+            outAttrs.push_back(AttributeDesc((AttributeID)nextAttrId++, "eo_x", TID_DOUBLE, AttributeDesc::IS_NULLABLE, 0));
+            outAttrs.push_back(AttributeDesc((AttributeID)nextAttrId++, "eo_y", TID_DOUBLE, AttributeDesc::IS_NULLABLE, 0));
+            outAttrs.push_back(AttributeDesc((AttributeID)nextAttrId++, "eo_t", TID_STRING, AttributeDesc::IS_NULLABLE, 0));
+
             stringstream ss;
             ss << query->getInstanceID();
             ArrayDistPtr localDist = ArrayDistributionFactory::getInstance()->construct(psLocalInstance, DEFAULT_REDUNDANCY, ss.str());
-            return ArrayDesc("OverArray", outAttrs, dims, localDist, query->getDefaultArrayResidency());
+            return ArrayDesc("CoordsArray", outAttrs, dims, localDist, query->getDefaultArrayResidency());
         }
     };
-    REGISTER_LOGICAL_OPERATOR_FACTORY(LogicalOver, "eo_over");
+    REGISTER_LOGICAL_OPERATOR_FACTORY(LogicalCoords, "eo_coords");
 }

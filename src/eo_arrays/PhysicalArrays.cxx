@@ -35,69 +35,62 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -----------------------------------------------------------------------------*/
 
-#include "../plugin.h" // Must be first to define PROJECT_ROOT
+#include "../plugin.h"  // Must be first to define PROJECT_ROOT
 
 #include <string>
 
-#include "query/Operator.h"
 #include "array/TupleArray.h"
+#include "query/Operator.h"
 #include "system/SystemCatalog.h"
 
 #include "../PostgresWrapper.h"
 
-namespace scidb4geo
-{
+namespace scidb4geo {
     using namespace std;
     using namespace boost;
     using namespace scidb;
 
     /*! @copydoc LogicalArrays
      */
-    class PhysicalArrays: public PhysicalOperator
-    {
-    public:
-        PhysicalArrays ( string &logicalName, const string &physicalName, const Parameters &parameters, const ArrayDesc &schema ) :
-            PhysicalOperator ( logicalName, physicalName, parameters, schema ) {
+    class PhysicalArrays : public PhysicalOperator {
+       public:
+        PhysicalArrays(string &logicalName, const string &physicalName, const Parameters &parameters, const ArrayDesc &schema) : PhysicalOperator(logicalName, physicalName, parameters, schema) {
         }
 
-        virtual RedistributeContext getOutputDistribution ( const std::vector<RedistributeContext> &inputDistributions,
-                const std::vector< ArrayDesc> &inputSchemas ) const {
-           return RedistributeContext(_schema.getDistribution(),_schema.getResidency());
+        virtual RedistributeContext getOutputDistribution(const std::vector<RedistributeContext> &inputDistributions,
+                                                          const std::vector<ArrayDesc> &inputSchemas) const {
+            return RedistributeContext(_schema.getDistribution(), _schema.getResidency());
         }
 
-        void preSingleExecute ( std::shared_ptr<Query> query ) {
-            assert ( _parameters.size() == 0 );
+        void preSingleExecute(std::shared_ptr<Query> query) {
+            assert(_parameters.size() == 0);
 
-
-
-            vector<EOArrayInfo> info =  PostgresWrapper::instance()->dbGetArrays();
-            std::shared_ptr<TupleArray> tuples ( std::make_shared<TupleArray> ( _schema, _arena ) );
-            for ( size_t i = 0; i < info.size(); ++i ) {
+            vector<EOArrayInfo> info = PostgresWrapper::instance()->dbGetArrays();
+            std::shared_ptr<TupleArray> tuples(std::make_shared<TupleArray>(_schema, _arena));
+            for (size_t i = 0; i < info.size(); ++i) {
                 Value tuple[2];
-                tuple[0].setString ( info[i].arrayname );
-                tuple[1].setString ( info[i].setting );
+                tuple[0].setString(info[i].arrayname);
+                tuple[1].setString(info[i].setting);
 
-                tuples->appendTuple ( tuple );
-
+                tuples->appendTuple(tuple);
             }
 
             _result = tuples;
-
         }
 
-        std::shared_ptr<Array> execute ( vector< std::shared_ptr<Array> > &inputArrays, std::shared_ptr<Query> query ) {
-            assert ( inputArrays.size() == 0 );
-            if ( !_result ) {
-                _result = std::make_shared<MemArray> ( _schema, query );
+        std::shared_ptr<Array> execute(vector<std::shared_ptr<Array> > &inputArrays, std::shared_ptr<Query> query) {
+            assert(inputArrays.size() == 0);
+            if (!_result) {
+                _result = std::make_shared<MemArray>(_schema, query);
             }
             return _result;
         }
 
-    private:
+       private:
         std::shared_ptr<Array> _result;
     };
 
-    REGISTER_PHYSICAL_OPERATOR_FACTORY ( PhysicalArrays, "eo_arrays", "PhysicalArrays" );
+    REGISTER_PHYSICAL_OPERATOR_FACTORY(PhysicalArrays, "eo_arrays", "PhysicalArrays");
     typedef PhysicalArrays PhysicalArrays_depr;
-    REGISTER_PHYSICAL_OPERATOR_FACTORY ( PhysicalArrays_depr, "st_arrays", "PhysicalArrays_depr" ); // Backward compatibility
-} //namespace
+    REGISTER_PHYSICAL_OPERATOR_FACTORY(PhysicalArrays_depr, "st_arrays", "PhysicalArrays_depr");  // Backward compatibility
+}  //namespace

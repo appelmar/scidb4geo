@@ -1,5 +1,5 @@
 /*
-This file has been originally based on source code of SciDB (src/query/ops/build/PhysicalBuild.cpp)
+This file has been originally based on source code of SciDB (src/query/ops/apply/PhysicalApply.cpp)
 which is copyright (C) 2008-2014 SciDB, Inc.
 
 SciDB is free software: you can redistribute it and/or modify
@@ -15,7 +15,7 @@ You should have received a copy of the AFFERO GNU General Public License
 along with SciDB.  If not, see <http://www.gnu.org/licenses/agpl-3.0.html>
 
 -----------------------------------------------------------------------------
-Modification date: (2015-08-01)
+Modification date: (2016-09-26)
 
 Modifications are copyright (C) 2016 Marius Appel <marius.appel@uni-muenster.de>
 
@@ -35,30 +35,29 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -----------------------------------------------------------------------------*/
 
-#include "OverArray.h"
+#include "CoordsArray.h"
 #include "array/Metadata.h"
 #include "query/Operator.h"
-//#include "query/ops/input/InputArray.h"
 
 using namespace std;
 using namespace boost;
 using namespace scidb;
 
 namespace scidb4geo {
-    class PhysicalOver : public PhysicalOperator {
+    class PhysicalCoords : public PhysicalOperator {
        public:
-        PhysicalOver(const string &logicalName, const string &physicalName, const Parameters &parameters, const ArrayDesc &schema) : PhysicalOperator(logicalName, physicalName, parameters, schema) {}
+        PhysicalCoords(const string &logicalName, const string &physicalName, const Parameters &parameters, const ArrayDesc &schema) : PhysicalOperator(logicalName, physicalName, parameters, schema) {}
 
-        virtual RedistributeContext getOutputDistribution(const std::vector<RedistributeContext> &inputDistributions,
-                                                          const std::vector<ArrayDesc> &inputSchemas) const {
-            return RedistributeContext(_schema.getDistribution(), _schema.getResidency());
+        virtual PhysicalBoundaries getOutputBoundaries(const std::vector<PhysicalBoundaries> &inputBoundaries, const std::vector<ArrayDesc> &inputSchemas) const {
+            return inputBoundaries[0];
         }
 
         std::shared_ptr<Array> execute(vector<std::shared_ptr<Array> > &inputArrays, std::shared_ptr<Query> query) {
-            assert(inputArrays.size() == 2);
+            assert(inputArrays.size() == 1);
             assert(_parameters.size() == 0);
-            return std::shared_ptr<Array>(new OverArray(query, inputArrays[0]->getArrayDesc(), inputArrays[1]->getArrayDesc(), _schema));
+            std::shared_ptr<Array> input = inputArrays[0];
+            return std::shared_ptr<Array>(new CoordsArray(query, input, _schema, _tileMode));
         }
     };
-    REGISTER_PHYSICAL_OPERATOR_FACTORY(PhysicalOver, "eo_over", "PhysicalOver");
+    REGISTER_PHYSICAL_OPERATOR_FACTORY(PhysicalCoords, "eo_coords", "PhysicalCoords");
 }

@@ -53,13 +53,13 @@ The table below lists novel AFL operators. Detailed descriptions of arguments, r
 | `eo_getsrs()`    | Gets the spatial reference of existing arrays |
 | `eo_regnewsrs()` | Registers custom spatial reference systems  |
 | `eo_extent()`    | Computes the geographic extent of referenced arrays |
-| `eo_cpsrs()`     | Copies the spatial reference from one array to another array|
 | `eo_settrs()`    | Sets the temporal reference of arrays |
 | `eo_gettrs()`    | Gets the temporal reference of arrays |
 | `eo_setmd()`     | Sets key value metadata of arrays and array attributes |
 | `eo_getmd()`     | Gets key value metadata of arrays and array attributes |
 | `eo_over()`      | Overlays two geographically referenced arrays  |
-
+| `eo_coords()`    | Converts array cell indexes to coordinates as additional array attributes  |
+| `eo_version()`   | Prints the plugin version and build dates  |
 
 
 ## Build and Installation
