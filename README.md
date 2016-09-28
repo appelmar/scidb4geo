@@ -1,6 +1,8 @@
 # scidb4geo
 A SciDB Plugin for Managing Spatial and Temporal Reference Information of Arrays
 
+**NOTE: THIS VERSION IS DEPRECATED AND WILL NOT BE UPDATED BY NEW FUNCTIONALITY**
+
 ## Description
 This is a preliminary version of a plugin for managing spatial and temporal reference information of SciDB arrays. It defines a couple of UDOs and adds actual reference information to the system catalog. It can be used within AFL or AQL. 
 
