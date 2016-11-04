@@ -31,7 +31,7 @@ The following instructions refer to using SciDB version 14.12 on Ubuntu 14.04.
 
 <!--### The fast way: Linking with prebuilt SciDB dev packages 
 1. Install prebuilt binary packages from Paradigm4 and some additional dependencies (see install_dependencies.sh)
-2. Clone the scidb4geo source `git clone https://github.com/mappl/scidb4geo`
+2. Clone the scidb4geo source `git clone https://github.com/appelmar/scidb4geo`
 3. Run `cmake . && XXXXX`
 4. The resulting install/libscidb4geo.so library can now be used to install it as a SciDB plugin (see Installation) XXXX -->
 
@@ -40,7 +40,7 @@ We assume that you have a running SciDB build environment, i.e. you are able to 
 
 1. If not yet done, set the environment variable `SCIDB_INSTALL_PATH` to your scidb installation path and to the SciDB source code root directory. Let `SCIDB_TRUNK` denote the directory of the scsidb source code.
 2. Change directory to `cd $SCIDB_TRUNK/examples/`
-3. Clone the scidb4geo source `git clone https://github.com/mappl/scidb4geo`
+3. Clone the scidb4geo source `git clone https://github.com/appelmar/scidb4geo`
 4. Add entries in `$SCIDB_TRUNK/examples/CMakeLists.txt` and `$SCIDB_TRUNK/install.cmake`
 5. Setup, make, install, and run SciDB  (i.e. subsequently run `$SCIDB_TRUNK/run.py setup | make | install | run`)
 7. Run the provided `$SCIDB_TRUNK/examples/scidb4geo/install/setup.sh` script to create neccessary tables in the system catalog
