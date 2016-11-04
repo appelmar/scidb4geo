@@ -44,7 +44,7 @@ operators that will be demonstrated in a case study in the near future.
 
 
 ## Operators
-The table below lists novel AFL operators. Detailed descriptions of arguments, return values, and examples can be found in the `gh-pages` branch at [http://mappl.github.io/scidb4geo/operators](http://mappl.github.io/scidb4geo/operators).
+The table below lists novel AFL operators. Detailed descriptions of arguments, return values, and examples can be found in the `gh-pages` branch at [http://appelmar.github.io/scidb4geo/operators](http://appelmar.github.io/scidb4geo/operators).
 
 | **Operator** | **Description** |
 | -----------  | --------------------------------------------------------  |
@@ -66,7 +66,7 @@ The table below lists novel AFL operators. Detailed descriptions of arguments, r
 The following instructions refer to using SciDB version 15.7 on Ubuntu 14.04. You will need the SciDB development packages which you normally have automatically installed if you built SciDB from sources.
 Furthermore, the plugin requires [libcurl](http://curl.haxx.se/).
 
-1. Clone this repository `git clone https://github.com/mappl/scidb4geo`.
+1. Clone this repository `git clone https://github.com/appelmar/scidb4geo`.
 2. Compile by running `make` in the base directory. If SciDB libraries and headers are installed at a nonstandard location, you may use `make SCIDB=/path/to/scidb`.
 3. Use the `install/setup.sh` script to extend SciDB's system catalog by running `cd install && chmod +x setup.sh && ./setup.sh` as the root user or with sudo rights.
 4. Copy `libscidb4geo.so` to the plugins directory of SciDB on **all instances**, i.e. `cp libscidb4geo.so /opt/scidb/15.7/lib/scidb/plugins/` for a default local SciDB installation.
