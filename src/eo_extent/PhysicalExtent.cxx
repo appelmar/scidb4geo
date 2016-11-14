@@ -147,9 +147,9 @@ namespace scidb4geo {
 
                     AffineTransform::double2 ps1_world, ps2_world, ps3_world, ps4_world;
                     AffineTransform::double2 ps1(lowBoundary[xdim_idx], lowBoundary[ydim_idx]);
-                    AffineTransform::double2 ps2(lowBoundary[xdim_idx], highBoundary[ydim_idx]);
-                    AffineTransform::double2 ps3(highBoundary[xdim_idx], lowBoundary[ydim_idx]);
-                    AffineTransform::double2 ps4(highBoundary[xdim_idx], highBoundary[ydim_idx]);
+                    AffineTransform::double2 ps2(lowBoundary[xdim_idx], highBoundary[ydim_idx] + 1);
+                    AffineTransform::double2 ps3(highBoundary[xdim_idx] + 1, lowBoundary[ydim_idx]);
+                    AffineTransform::double2 ps4(highBoundary[xdim_idx] + 1, highBoundary[ydim_idx] + 1);
                     srs_map[*it].A.f(ps1, ps1_world);
                     srs_map[*it].A.f(ps2, ps2_world);
                     srs_map[*it].A.f(ps3, ps3_world);
@@ -170,7 +170,7 @@ namespace scidb4geo {
                 if (trs_map.find(*it) != trs_map.end()) {
                     setting << "t";
                     stringstream sd;
-                    sd << "Bounds T:(" << lowBoundary[tdim_idx] << "," << highBoundary[tdim_idx] << ")";
+                    sd << "Bounds T:(" << lowBoundary[tdim_idx] << "," << highBoundary[tdim_idx] + 1 << ")";
                     SCIDB4GEO_DEBUG(sd.str());
                     tuple[6].setString(trs_map[*it].tref->datetimeAtIndex(lowBoundary[tdim_idx]).toStringISO());
                     tuple[7].setString(trs_map[*it].tref->datetimeAtIndex(highBoundary[tdim_idx]).toStringISO());
