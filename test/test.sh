@@ -53,7 +53,7 @@ if diff test.out test.expected > /dev/null 2>&1; then echo "eo_gettrs()... succe
 # 5. eo_extent
 iquery -o csv:l -aq "set no timer;eo_extent(${TESTARRAY});" > test.out
 echo "arrayname,setting,xmin,xmax,ymin,ymax,tmin,tmax,vmin,vmax" > test.expected
-echo "'${TESTARRAY}','st',-180,179,-89,90,'2016-01-01T00:00:00','2016-02-01T00:00:00',null,null" >> test.expected
+echo "'${TESTARRAY}','st',-180,180,-90,90,'2016-01-01T00:00:00','2016-02-02T00:00:00',null,null" >> test.expected
 if diff test.out test.expected > /dev/null 2>&1; then echo "eo_extent()... successful"; else echo "eo_extent()... failed"; fi
 
 # 6. eo_arrays
