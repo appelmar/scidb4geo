@@ -24,6 +24,8 @@ DROP TRIGGER IF EXISTS scidb4geo_trig_array_rename ON "array";
 DROP TRIGGER IF EXISTS scidb4geo_trig_array_remove ON "array";
 DROP TRIGGER IF EXISTS scidb4geo_trig_attribute_rename ON "array_attribute";
 DROP TRIGGER IF EXISTS scidb4geo_trig_attribute_remove ON "array_attribute";
+DROP TRIGGER IF EXISTS scidb4geo_trig_namespace_rename ON "namespaces";
+DROP TRIGGER IF EXISTS scidb4geo_trig_namespace_remove ON "namespaces";
 
 DROP FUNCTION IF EXISTS scidb4geo_proc_array_rename();
 DROP FUNCTION IF EXISTS scidb4geo_proc_array_remove();
@@ -31,6 +33,8 @@ DROP FUNCTION IF EXISTS scidb4geo_proc_dimension_rename();
 DROP FUNCTION IF EXISTS scidb4geo_proc_dimension_remove();
 DROP FUNCTION IF EXISTS scidb4geo_proc_attribute_rename();
 DROP FUNCTION IF EXISTS scidb4geo_proc_attribute_remove();
+DROP FUNCTION IF EXISTS scidb4geo_proc_namespace_remove();
+DROP FUNCTION IF EXISTS scidb4geo_proc_namespace_rename();
 
 DROP TABLE IF EXISTS scidb4geo_array_v;
 DROP TABLE IF EXISTS scidb4geo_array_t;
