@@ -82,7 +82,7 @@ namespace scidb4geo {
             boost::split(k, keys, boost::is_any_of(",;"));
             boost::split(v, vals, boost::is_any_of(",;"));
             if (k.size() != v.size()) {
-                SCIDB4GEO_ERROR("Different namber of keys and values for metadata", SCIDB4GEO_ERR_UNKNOWN);
+                SCIDB4GEO_ERROR("Different number of keys and values for metadata", SCIDB4GEO_ERR_UNKNOWN);
             }
 
             map<string, string> kv;
@@ -91,10 +91,10 @@ namespace scidb4geo {
             }
 
             if (_parameters.size() == 3) {
-                PostgresWrapper::instance()->dbSetArrayMD(_arrayName, kv);  // TODO: Add domain
+                PostgresWrapper::instance()->dbSetArrayMD(_arrayName, _namespaceName, kv);  // TODO: Add domain
             } else if (_parameters.size() == 4) {
                 string attrname = ((std::shared_ptr<OperatorParamPhysicalExpression> &)_parameters[1])->getExpression()->evaluate().getString();
-                PostgresWrapper::instance()->dbSetAttributeMD(_arrayName, attrname, kv);  // TODO: Add domain
+                PostgresWrapper::instance()->dbSetAttributeMD(_arrayName,_namespaceName, attrname, kv);  // TODO: Add domain
             }
         }
 

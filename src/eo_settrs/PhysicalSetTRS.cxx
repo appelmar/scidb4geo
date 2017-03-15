@@ -77,7 +77,7 @@ namespace scidb4geo {
                 string array2;
                 shared_ptr<OperatorParamArrayReference> &arrayRef2 = (shared_ptr<OperatorParamArrayReference> &)_parameters[1];
                 query->getNamespaceArrayNames(arrayRef2->getObjectName(), namespace2, array2);
-                trs = PostgresWrapper::instance()->dbGetTemporalRefOrEmpty(ArrayDesc::makeUnversionedName(array2));
+                trs = PostgresWrapper::instance()->dbGetTemporalRefOrEmpty(ArrayDesc::makeUnversionedName(array2),namespace2);
             } else {
                 trs.tdim = ((std::shared_ptr<OperatorParamPhysicalExpression> &)_parameters[1])->getExpression()->evaluate().getString();
                 trs.tref = new TReference(((std::shared_ptr<OperatorParamPhysicalExpression> &)_parameters[2])->getExpression()->evaluate().getString(),
@@ -107,7 +107,7 @@ namespace scidb4geo {
 
             //TODO: Add some checks
 
-            PostgresWrapper::instance()->dbSetTemporalRef(_arrayName, trs.tdim, trs.tref->getStart().toStringISO(), trs.tref->getCellsize().toStringISO());
+            PostgresWrapper::instance()->dbSetTemporalRef(_arrayName,_namespaceName, trs.tdim, trs.tref->getStart().toStringISO(), trs.tref->getCellsize().toStringISO());
 
             delete trs.tref;
         }

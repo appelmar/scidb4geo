@@ -114,7 +114,7 @@ namespace scidb4geo {
         delete _c;
     }
 
-    void PostgresWrapper::dbSetSpatialRef(const string &arrayname, const string &dim_x, const string &dim_y, const string &auth_name, int auth_srid, AffineTransform &A) {
+    void PostgresWrapper::dbSetSpatialRef(const string &arrayname, const string& namespace_name, const string &dim_x, const string &dim_y, const string &auth_name, int auth_srid, AffineTransform &A) {
         // 1. Check whether auth_name, auth_srid exists in spatial_ref_sys table, if so, return internal SRID
         // "select srid from scidb4geo_spatialrefsys where  lower(trim(both ' ' from auth_name)) = lower(trim(both ' ' from ?1)) and auth_srid = ?2;"
         pqxx::work txn(*_c);
@@ -166,14 +166,14 @@ namespace scidb4geo {
         // 2. make sure that refsys will be changed if already set
         // delete from scidb4geo_array_s where arrayname = ?1;
         q.str("");
-        q << "delete from scidb4geo_array_s where arrayname = '" << arrayname << "';";
+        q << "delete from scidb4geo_array_s where arrayname = '" << arrayname << "' and namespace = '" << namespace_name <<  "';";
         SCIDB4GEO_DEBUG("Performing SQL query '" + q.str() + "'");
         txn3.exec(q.str());
 
         // 3. Add to scidb4geo_array_s table
         // insert into scidb4geo_array_s(arrayname, xdim, ydim,
         q.str("");
-        q << setprecision(numeric_limits<double>::digits10) << "insert into scidb4geo_array_s(arrayname, xdim, ydim, srid, x0,y0,a11,a12,a21,a22) values('" << arrayname << "','" << dim_x << "','" << dim_y << "'," << srid << ","
+        q << setprecision(numeric_limits<double>::digits10) << "insert into scidb4geo_array_s(arrayname,namespace, xdim, ydim, srid, x0,y0,a11,a12,a21,a22) values('" << arrayname << "','" << namespace_name << "','" << dim_x << "','" << dim_y << "'," << srid << ","
           << A._x0 << "," << A._y0 << "," << A._a11 << "," << A._a12 << "," << A._a21 << "," << A._a22 << ");";
         SCIDB4GEO_DEBUG("Performing SQL query '" + q.str() + "'");
         txn3.exec(q.str());
@@ -182,17 +182,18 @@ namespace scidb4geo {
         txn3.commit();
     }
 
-    vector<SpatialArrayInfo> PostgresWrapper::dbGetSpatialRef(const vector<string> &arraynames) {
+    vector<SpatialArrayInfo> PostgresWrapper::dbGetSpatialRef(const vector<string> &arraynames, const vector<string> &namespace_names) {
+        assert(arraynames.size() == namespace_names.size());
         pqxx::work txn(*_c);
         stringstream q;  // query string
         q.str("");
 
-        q << "select xdim,ydim,x0,y0,a11,a12,a21,a22,auth_name,auth_srid,srtext,proj4text,arrayname from scidb4geo_array_s a inner join scidb4geo_spatialrefsys r on a.srid = r.srid";
+        q << "select xdim,ydim,x0,y0,a11,a12,a21,a22,auth_name,auth_srid,srtext,proj4text,arrayname,namespace from scidb4geo_array_s a inner join scidb4geo_spatialrefsys r on a.srid = r.srid";
         if (arraynames.size() > 0) {
             q << " where"
-              << " arrayname='" << arraynames[0] << "'";
+              << " (arrayname='" << arraynames[0] << "' and namespace='" << namespace_names[0] << "')";
             for (size_t i = 1; i < arraynames.size(); ++i) {
-                q << " or arrayname='" << arraynames[i] << "'";
+                q << " or (arrayname='" << arraynames[i] << "' and namespace='" << namespace_names[i] << "')";
             }
         }
         q << ";";
@@ -215,6 +216,7 @@ namespace scidb4geo {
             info.srtext = r[i][10].as<string>();
             info.proj4text = r[i][11].as<string>();
             info.arrayname = r[i][12].as<string>();
+	    info.namespace_name = r[i][13].as<string>();
             info_list.push_back(info);
         }
 
@@ -223,13 +225,14 @@ namespace scidb4geo {
 
     vector<SpatialArrayInfo> PostgresWrapper::dbGetSpatialRef() {
         vector<string> v(0);
-        return dbGetSpatialRef(v);
+        return dbGetSpatialRef(v,v);
     }
 
-    SpatialArrayInfo PostgresWrapper::dbGetSpatialRef(const string &arrayname) {
-        vector<string> in;
-        in.push_back(arrayname);
-        vector<SpatialArrayInfo> out = PostgresWrapper::instance()->dbGetSpatialRef(in);  // must be called via singleton
+    SpatialArrayInfo PostgresWrapper::dbGetSpatialRef(const string &arrayname, const string& namespace_name) {
+        vector<string> in_array, in_ns;
+        in_array.push_back(arrayname);
+	in_ns.push_back(namespace_name);
+        vector<SpatialArrayInfo> out = PostgresWrapper::instance()->dbGetSpatialRef(in_array,in_ns);  // must be called via singleton
         if (out.size() != 1) {
             stringstream serr;
             serr << "Cannot find spatial reference for array '" << arrayname << "'";
@@ -238,29 +241,35 @@ namespace scidb4geo {
         return out[0];
     }
 
-    SpatialArrayInfo PostgresWrapper::dbGetSpatialRefOrEmpty(const string &arrayname) {
-        vector<string> in;
-        in.push_back(arrayname);
-        vector<SpatialArrayInfo> out = PostgresWrapper::instance()->dbGetSpatialRef(in);  // must be called via singleton
+    SpatialArrayInfo PostgresWrapper::dbGetSpatialRefOrEmpty(const string &arrayname, const string& namespace_name) {
+        vector<string> in_array, in_ns;
+        in_array.push_back(arrayname);
+	in_ns.push_back(namespace_name);
+        vector<SpatialArrayInfo> out = PostgresWrapper::instance()->dbGetSpatialRef(in_array,in_ns);  // must be called via singleton
         if (out.size() != 1) {
             SpatialArrayInfo srs;
             srs.arrayname = "";
+	    srs.namespace_name = "";
             out.push_back(srs);
         }
         return out[0];
     }
 
-    int PostgresWrapper::dbGetSpatialRefCount(const vector<string> &arraynames) {
+    int PostgresWrapper::dbGetSpatialRefCount(const vector<string> &arraynames, const vector<string> &namespace_names) {
+       assert(arraynames.size() == namespace_names.size());
         pqxx::work txn(*_c);
         stringstream q;  // query string
         q.str("");
 
         q << "select count(*) from scidb4geo_array_s a inner join scidb4geo_spatialrefsys r on a.srid = r.srid";
-        if (arraynames.size() > 0) q << " where "
-                                     << " arrayname='" << arraynames[0] << "'";
-        for (size_t i = 1; i < arraynames.size(); ++i) {
-            q << " or arrayname='" << arraynames[i] << "'";
-        }
+        if (arraynames.size() > 0) 
+	{
+	  q << " where"
+              << " (arrayname='" << arraynames[0] << "' and namespace='" << namespace_names[0] << "')";
+            for (size_t i = 1; i < arraynames.size(); ++i) {
+                q << " or (arrayname='" << arraynames[i] << "' and namespace='" << namespace_names[i] << "')";
+            }
+	}
         q << ";";
 
         SCIDB4GEO_DEBUG("Performing SQL query '" + q.str() + "'");
@@ -275,7 +284,7 @@ namespace scidb4geo {
 
     int PostgresWrapper::dbGetSpatialRefCount() {
         vector<string> v(0);
-        return dbGetSpatialRefCount(v);
+        return dbGetSpatialRefCount(v,v);
     }
 
     void PostgresWrapper::dbRegNewSRS(const SRSInfo &info) {
@@ -392,21 +401,21 @@ namespace scidb4geo {
         return true;
     }
 
-    void PostgresWrapper::dbSetTemporalRef(const string &arrayName, const string &dim_t, const string &t0, const string &dt) {
+    void PostgresWrapper::dbSetTemporalRef(const string &arrayName, const string& namespace_name, const string &dim_t, const string &t0, const string &dt) {
         pqxx::work txn(*_c);
         stringstream q;  // query string
 
         // 1. make sure that refsys will be changed if already set
         // delete from scidb4geo_array_t where arrayname = ?1;
         q.str("");
-        q << "delete from scidb4geo_array_t where arrayname = '" << arrayName << "';";
+        q << "delete from scidb4geo_array_t where arrayname = '" << arrayName << "' and namespace='" << namespace_name << "';";
         SCIDB4GEO_DEBUG("Performing SQL query '" + q.str() + "'");
         txn.exec(q.str());
 
         // 2. Add to scidb4geo_array_t table
         // insert into scidb4geo_array_t(arrayname, tdim, t0, dt)
         q.str("");
-        q << setprecision(numeric_limits<double>::digits10) << "insert into scidb4geo_array_t(arrayname, tdim, t0, dt) values('" << arrayName << "','" << dim_t << "','" << t0 << "','" << dt << "');";
+        q << setprecision(numeric_limits<double>::digits10) << "insert into scidb4geo_array_t(arrayname, namespace, tdim, t0, dt) values('" << arrayName << "','" << namespace_name << "','"<< dim_t << "','" << t0 << "','" << dt << "');";
         SCIDB4GEO_DEBUG("Performing SQL query '" + q.str() + "'");
         txn.exec(q.str());
 
@@ -414,17 +423,19 @@ namespace scidb4geo {
         txn.commit();
     }
 
-    vector<TemporalArrayInfo> PostgresWrapper::dbGetTemporalRef(const vector<string> &arraynames) {
+    vector<TemporalArrayInfo> PostgresWrapper::dbGetTemporalRef(const vector<string> &arraynames, const vector<string> &namespace_names) {
+        assert(arraynames.size() == namespace_names.size());
+       
         pqxx::work txn(*_c);
         stringstream q;  // query string
         q.str("");
 
-        q << "select arrayname, tdim, t0, dt  from scidb4geo_array_t";
+        q << "select arrayname, tdim, t0, dt, namespace  from scidb4geo_array_t";
         if (arraynames.size() > 0) {
-            q << " where "
-              << " arrayname='" << arraynames[0] << "'";
+	    q << " where"
+              << " (arrayname='" << arraynames[0] << "' and namespace='" << namespace_names[0] << "')";
             for (size_t i = 1; i < arraynames.size(); ++i) {
-                q << "or arrayname='" << arraynames[i] << "'";
+                q << " or (arrayname='" << arraynames[i] << "' and namespace='" << namespace_names[i] << "')";
             }
         }
         q << ";";
@@ -442,6 +453,7 @@ namespace scidb4geo {
             info.arrayname = r[i][0].as<string>();
             info.tdim = r[i][1].as<string>();  // TODO r[0]["tdim"] etc would improve readability
             info.tref = new TReference(r[i][2].as<string>(), r[i][3].as<string>());
+	    info.namespace_name = r[i][4].as<string>();
             // info.t0_text = r[i][2].as<string>();
             // info.dt_text = r[i][3].as<string>();
             //info.t0_timestamp= r[i][2].as<double>();
@@ -456,13 +468,14 @@ namespace scidb4geo {
 
     vector<TemporalArrayInfo> PostgresWrapper::dbGetTemporalRef() {
         vector<string> v(0);
-        return dbGetTemporalRef(v);
+        return dbGetTemporalRef(v,v);
     }
 
-    TemporalArrayInfo PostgresWrapper::dbGetTemporalRef(const string &arrayname) {
-        vector<string> in;
-        in.push_back(arrayname);
-        vector<TemporalArrayInfo> out = PostgresWrapper::instance()->dbGetTemporalRef(in);  // must be called via singleton
+    TemporalArrayInfo PostgresWrapper::dbGetTemporalRef(const string &arrayname, const string& namespace_name) {
+        vector<string> in_array, in_ns;
+        in_array.push_back(arrayname);
+	in_ns.push_back(namespace_name);
+        vector<TemporalArrayInfo> out = PostgresWrapper::instance()->dbGetTemporalRef(in_array,in_ns);  // must be called via singleton
         if (out.size() != 1) {
             stringstream serr;
             serr << "Cannot find temporal reference for array '" << arrayname << "'";
@@ -471,28 +484,33 @@ namespace scidb4geo {
         return out[0];
     }
 
-    TemporalArrayInfo PostgresWrapper::dbGetTemporalRefOrEmpty(const string &arrayname) {
-        vector<string> in;
-        in.push_back(arrayname);
-        vector<TemporalArrayInfo> out = PostgresWrapper::instance()->dbGetTemporalRef(in);  // must be called via singleton
+    TemporalArrayInfo PostgresWrapper::dbGetTemporalRefOrEmpty(const string &arrayname, const string& namespace_name) {
+        vector<string> in_array, in_ns;
+        in_array.push_back(arrayname);
+	in_ns.push_back(namespace_name);
+        vector<TemporalArrayInfo> out = PostgresWrapper::instance()->dbGetTemporalRef(in_array,in_ns);  // must be called via singleton
         if (out.size() != 1) {
             TemporalArrayInfo trs;
             trs.arrayname = "";
+	    trs.namespace_name = "";
             return trs;
         }
         return out[0];
     }
 
-    int PostgresWrapper::dbGetTemporalRefCount(const vector<string> &arraynames) {
+    int PostgresWrapper::dbGetTemporalRefCount(const vector<string> &arraynames, const vector<string> &namespace_names) {
+        assert(arraynames.size() == namespace_names.size());
         pqxx::work txn(*_c);
         stringstream q;  // query string
         q.str("");
 
         q << "select count(*) from scidb4geo_array_t";
-        if (arraynames.size() > 0) q << " where "
-                                     << " arrayname='" << arraynames[0] << "'";
-        for (size_t i = 1; i < arraynames.size(); ++i) {
-            q << "or arrayname='" << arraynames[i] << "'";
+	if (arraynames.size() > 0) {
+	    q << " where"
+              << " (arrayname='" << arraynames[0] << "' and namespace='" << namespace_names[0] << "')";
+            for (size_t i = 1; i < arraynames.size(); ++i) {
+                q << " or (arrayname='" << arraynames[i] << "' and namespace='" << namespace_names[i] << "')";
+            }
         }
         q << ";";
 
@@ -509,7 +527,7 @@ namespace scidb4geo {
 
     int PostgresWrapper::dbGetTemporalRefCount() {
         vector<string> v(0);
-        return dbGetTemporalRefCount(v);
+        return dbGetTemporalRefCount(v,v);
     }
 
     vector<EOArrayInfo> PostgresWrapper::dbGetArrays() {
@@ -518,7 +536,7 @@ namespace scidb4geo {
         q.str("");
 
         q << "SELECT "
-             "CASE WHEN  S.arrayname IS NULL AND  T.arrayname IS NULL THEN V.arrayname WHEN S.arrayname IS NULL THEN T.arrayname ELSE S.arrayname END AS arrayname, "
+	     "CASE WHEN  S.arrayname IS NULL AND  T.arrayname IS NULL THEN V.arrayname WHEN S.arrayname IS NULL THEN T.arrayname ELSE S.arrayname END AS arrayname, "
              "CASE WHEN  S.arrayname IS NULL THEN '' ELSE 's' END || CASE WHEN  T.arrayname IS NULL THEN '' ELSE 't' END || CASE WHEN  V.arrayname IS NULL THEN '' ELSE 'v' END as setting "
              "FROM scidb4geo_array_s AS S FULL OUTER JOIN scidb4geo_array_t AS T ON S.arrayname = T.arrayname FULL OUTER JOIN scidb4geo_array_v AS V ON S.arrayname=V.arrayname ORDER BY arrayname;";
 
@@ -565,19 +583,19 @@ namespace scidb4geo {
         return count;
     }
 
-    void PostgresWrapper::dbSetArrayMD(const string &arrayname, map<string, string> &kv, const string &domain) {
+    void PostgresWrapper::dbSetArrayMD(const string &arrayname, const string& namespace_name, map<string, string> &kv, const string &domain) {
         // 1. Check whether there is a metadata row for the array, if not create
         pqxx::work txn(*_c);
         stringstream q;  // query string
         q.str("");
 
-        q << "select count(*) from scidb4geo_array_md where arrayname='" << arrayname << "' and domainname='" << domain << "';";
+        q << "select count(*) from scidb4geo_array_md where arrayname='" << arrayname << "' and namespace='" << namespace_name << "' and domainname='" << domain << "';";
         SCIDB4GEO_DEBUG("Performing SQL query '" + q.str() + "'");
         pqxx::result r = txn.exec(q.str());
         int count = r[0][0].as<int>();  // Does this work without commit?
         if (count == 0) {
             q.str("");
-            q << "insert into scidb4geo_array_md(arrayname, domainname, kv) values('" << arrayname << "','" << domain << "','');";
+            q << "insert into scidb4geo_array_md(arrayname, namespace, domainname, kv) values('" << arrayname << "','" << namespace_name << "','" << domain << "','');";
             SCIDB4GEO_DEBUG("Performing SQL query '" + q.str() + "'");
             pqxx::result r = txn.exec(q.str());
         }
@@ -610,7 +628,7 @@ namespace scidb4geo {
 
         {
             q.str("");
-            q << "UPDATE scidb4geo_array_md SET kv = kv || hstore(" << key_array_str.str() << "," << val_array_str.str() << ")  where arrayname='" << arrayname << "' and domainname='" << domain << "';";
+            q << "UPDATE scidb4geo_array_md SET kv = kv || hstore(" << key_array_str.str() << "," << val_array_str.str() << ")  where arrayname='" << arrayname << "' and namespace='" << namespace_name << "' and domainname='" << domain << "';";
             SCIDB4GEO_DEBUG("Performing SQL query '" + q.str() + "'");
             pqxx::result r = txn.exec(q.str());
         }
@@ -620,14 +638,14 @@ namespace scidb4geo {
         txn.commit();
     }
 
-    map<string, string> PostgresWrapper::dbGetArrayMD(const string &arrayname, const string &domain) {
+    map<string, string> PostgresWrapper::dbGetArrayMD(const string &arrayname, const string& namespace_name, const string &domain) {
         map<string, string> result;
 
         pqxx::work txn(*_c);
         stringstream q;  // query string
         q.str("");
 
-        q << "select (each(kv)).key, (each(kv)).value from scidb4geo_array_md where arrayname='" << arrayname << "' and domainname='" << domain << "';";
+        q << "select (each(kv)).key, (each(kv)).value from scidb4geo_array_md where arrayname='" << arrayname << "' and namespace='" << namespace_name << "' and domainname='" << domain << "';";
 
         SCIDB4GEO_DEBUG("Performing SQL query '" + q.str() + "'");
         pqxx::result r = txn.exec(q.str());
@@ -645,7 +663,7 @@ namespace scidb4geo {
         return result;
     }
 
-    void PostgresWrapper::dbSetAttributeMD(const string &arrayname, const string &attrname, map<string, string> &kv, const string &domain) {
+    void PostgresWrapper::dbSetAttributeMD(const string &arrayname, const string& namespace_name, const string &attrname, map<string, string> &kv, const string &domain) {
         // 1. Find array id
         pqxx::work txn(*_c);
         stringstream q;  // query string
@@ -653,7 +671,7 @@ namespace scidb4geo {
         int arrayid;
         {
             q.str("");
-            q << "select id from \"array\" where name='" << arrayname << "';";
+            q << "select array_id from namespace_arrays where array_name='" << arrayname << "' and namespace_name='" <<  namespace_name << "';";
             SCIDB4GEO_DEBUG("Performing SQL query '" + q.str() + "'");
             pqxx::result r = txn.exec(q.str());
             if (r.size() == 0) {
@@ -725,7 +743,7 @@ namespace scidb4geo {
         txn.commit();
     }
 
-    map<string, string> PostgresWrapper::dbGetAttributeMD(const string &arrayname, const string &attrname, const string &domain) {
+    map<string, string> PostgresWrapper::dbGetAttributeMD(const string &arrayname, const string& namespace_name, const string &attrname, const string &domain) {
         map<string, string> result;
 
         pqxx::work txn(*_c);
@@ -734,7 +752,7 @@ namespace scidb4geo {
         int arrayid;
         {
             q.str("");
-            q << "select id from \"array\" where name='" << arrayname << "';";
+            q << "select array_id from namespace_arrays where array_name='" << arrayname << "' and namespace_name='" <<  namespace_name << "';";
             SCIDB4GEO_DEBUG("Performing SQL query '" + q.str() + "'");
             pqxx::result r = txn.exec(q.str());
             if (r.size() == 0) {

@@ -12,6 +12,9 @@ endif
 
 # Find SciDB at default locations
 ifeq ($(SCIDB),) 
+  ifneq ($(wildcard /opt/scidb/16.9/.*),)
+  SCIDB := /opt/scidb/16.9
+  else 
   ifneq ($(wildcard /opt/scidb/15.12/.*),)
   SCIDB := /opt/scidb/15.12
   else 
@@ -21,6 +24,7 @@ ifeq ($(SCIDB),)
   ifneq ($(wildcard /opt/scidb/14.12/.*),)
   SCIDB := /opt/scidb/14.12 
   endif 
+  endif
   endif
   endif
 endif

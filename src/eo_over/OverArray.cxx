@@ -130,6 +130,11 @@ namespace scidb4geo {
         p_cur = p_first;
         has_cur = true;
     }
+    
+     void OverChunkIterator::restart() {
+        p_cur = p_first;
+        has_cur = true;
+    }
 
     ConstChunk const &OverChunkIterator::getChunk() {
         return *chunk;
@@ -313,10 +318,13 @@ namespace scidb4geo {
         assert(_ninstances > 0 && _instance_id < _ninstances);
 
         // Get reference information
-        vector<string> nameAB;
+        vector<string> nameAB,namespaceAB;
+	
         nameAB.push_back(ArrayDesc::makeUnversionedName(_desc_A.getName()));
         nameAB.push_back(ArrayDesc::makeUnversionedName(_desc_B.getName()));
-        vector<SpatialArrayInfo> srsAB = PostgresWrapper::instance()->dbGetSpatialRef(nameAB);
+	namespaceAB.push_back(_desc_A.getNamespaceName());
+	namespaceAB.push_back(_desc_B.getNamespaceName());
+        vector<SpatialArrayInfo> srsAB = PostgresWrapper::instance()->dbGetSpatialRef(nameAB, namespaceAB);
         if (srsAB.size() != 2) {
             SCIDB4GEO_DEBUG("eo_over: at least one of both arrays is not spatially referenced, ignoring space in overlay operation.");
         } else {
@@ -352,7 +360,7 @@ namespace scidb4geo {
             }
         }
 
-        vector<TemporalArrayInfo> trsAB = PostgresWrapper::instance()->dbGetTemporalRef(nameAB);
+        vector<TemporalArrayInfo> trsAB = PostgresWrapper::instance()->dbGetTemporalRef(nameAB, namespaceAB);
         if (trsAB.size() != 2) {
             SCIDB4GEO_DEBUG("eo_over: at least one of both arrays is not temporally referenced, ignoring date and time in overlay operation.");
         } else {

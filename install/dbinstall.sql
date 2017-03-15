@@ -32,6 +32,7 @@ create index scidb4geo_idx_spatialrefsys_auth ON scidb4geo_spatialrefsys (auth_n
 -- each row in the following table represents spatial reference for one array including affine transformation parameters to convert array coordinates to world coordinates
 create table scidb4geo_array_s (
 	arrayname varchar(64) not null,
+	namespace varchar(64) not null,
 	xdim varchar(64) not null,
 	ydim varchar(64) not null,
 	srid integer not null,
@@ -47,6 +48,7 @@ create table scidb4geo_array_s (
 
 create table scidb4geo_array_t (
 	arrayname varchar(64) not null,
+	namespace varchar(64) not null,
 	tdim varchar(64) not null,
 	t0 varchar(64)  not null,
 	dt varchar(64) not null,
@@ -55,6 +57,7 @@ create table scidb4geo_array_t (
 	
 create table scidb4geo_array_v (
 	arrayname varchar(64) not null,
+	namespace varchar(64) not null,
 	vdim varchar(64) not null,
 	srid integer not null,
 	v0 numeric not null default 0.0,
@@ -64,7 +67,8 @@ create table scidb4geo_array_v (
 	
 
 create table scidb4geo_array_md (
-        arrayname varchar(64) ,
+        arrayname varchar(64),
+        namespace varchar(64) not null,
         domainname varchar(64) default '', 
 	kv hstore,
 	primary key (arrayname));	
@@ -83,40 +87,40 @@ create table scidb4geo_attribute_md (
 create or replace function scidb4geo_proc_array_rename() returns trigger as
 $BODY$
   begin
-    update scidb4geo_array_s      set arrayname = NEW.name where arrayname = OLD.name;
-    update scidb4geo_array_v      set arrayname = NEW.name where arrayname = OLD.name;
-    update scidb4geo_array_t      set arrayname = NEW.name where arrayname = OLD.name;
-    update scidb4geo_array_md     set arrayname = NEW.name where arrayname = OLD.name;
+    update scidb4geo_array_s      set arrayname = NEW.array_name, namepace = NEW.namespace_name where arrayname = OLD.array_name and namespace = OLD.namespace_name;
+    update scidb4geo_array_v      set arrayname = NEW.array_name, namepace = NEW.namespace_name where arrayname = OLD.array_name and namespace = OLD.namespace_name;
+    update scidb4geo_array_t      set arrayname = NEW.array_name, namepace = NEW.namespace_name where arrayname = OLD.array_name and namespace = OLD.namespace_name;
+    update scidb4geo_array_md     set arrayname = NEW.array_name, namepace = NEW.namespace_name where arrayname = OLD.array_name and namespace = OLD.namespace_name;
   return NULL;
   end;
 $BODY$ LANGUAGE plpgsql;
 	
 
 create trigger scidb4geo_trig_array_rename
-  after update on "array"
+  after update on "namespace_arrays"
   for each row
-  when (OLD.name is distinct from NEW.name)
+  when (OLD.namespace_name is distinct from NEW.namespace_name or OLD.array_name is distinct from NEW.array_name)
   execute procedure scidb4geo_proc_array_rename();
   
   
-  
+ 
 	
 -- Trigger array remove operations	
 create or replace function scidb4geo_proc_array_remove() returns trigger as
 $BODY$
   begin
-  delete from scidb4geo_array_s       where arrayname = OLD.name;
-  delete from scidb4geo_array_v       where arrayname = OLD.name;
-  delete from scidb4geo_array_t       where arrayname = OLD.name;
-  delete from scidb4geo_array_md      where arrayname = OLD.name;
-  delete from scidb4geo_attribute_md  where arrayid   = OLD.id;
+  delete from scidb4geo_array_s       where arrayname = OLD.array_name and namespace = OLD.namespace_name;
+  delete from scidb4geo_array_v       where arrayname = OLD.array_name and namespace = OLD.namespace_name;
+  delete from scidb4geo_array_t       where arrayname = OLD.array_name and namespace = OLD.namespace_name;
+  delete from scidb4geo_array_md      where arrayname = OLD.array_name and namespace = OLD.namespace_name;
+  delete from scidb4geo_attribute_md  where arrayid   = OLD.array_id;
   return NULL;
   end;
 $BODY$ LANGUAGE plpgsql;
 	
 
 create trigger scidb4geo_trig_array_remove
-  after delete on "array"
+  after delete on "namespace_arrays"
   for each row
   execute procedure scidb4geo_proc_array_remove();
   
@@ -127,15 +131,17 @@ create trigger scidb4geo_trig_array_remove
 create or replace function scidb4geo_proc_dimension_rename() returns trigger as
 $BODY$
   begin
-    update scidb4geo_array_s set xdim = NEW.name where xdim = OLD.name and arrayname = (select name from "array" where id = OLD.array_id);
-    update scidb4geo_array_s set ydim = NEW.name where ydim = OLD.name and arrayname = (select name from "array" where id = OLD.array_id);
-    update scidb4geo_array_v set vdim = NEW.name where vdim = OLD.name and arrayname = (select name from "array" where id = OLD.array_id);
-    update scidb4geo_array_t set tdim = NEW.name where tdim = OLD.name and arrayname = (select name from "array" where id = OLD.array_id);
+    update scidb4geo_array_s set xdim = NEW.name where xdim = OLD.name and arrayname = (select name from "array" where id = OLD.array_id) and namespace = (select namespace_name from "namespace_arrays" where array_id = OLD.array_id);
+    update scidb4geo_array_s set ydim = NEW.name where ydim = OLD.name and arrayname = (select name from "array" where id = OLD.array_id) and namespace = (select namespace_name from "namespace_arrays" where array_id = OLD.array_id);
+    update scidb4geo_array_v set vdim = NEW.name where vdim = OLD.name and arrayname = (select name from "array" where id = OLD.array_id) and namespace = (select namespace_name from "namespace_arrays" where array_id = OLD.array_id);
+    update scidb4geo_array_t set tdim = NEW.name where tdim = OLD.name and arrayname = (select name from "array" where id = OLD.array_id) and namespace = (select namespace_name from "namespace_arrays" where array_id = OLD.array_id);
   return NULL;
   end;
 $BODY$ LANGUAGE plpgsql;
 	
 
+	
+	
 create trigger scidb4geo_trig_dimension_rename
   after update on "array_dimension"
   for each row
@@ -150,9 +156,9 @@ create or replace function scidb4geo_proc_dimension_remove() returns trigger as
 $BODY$
   begin
     -- delete srs if either xdim or ydim was removed from array for whatever reason
-    delete from scidb4geo_array_s where (xdim = OLD.name or ydim = OLD.name) and arrayname = (select name from "array" where id = OLD.array_id);  
-	delete from scidb4geo_array_v where (vdim = OLD.name) and arrayname = (select name from "array" where id = OLD.array_id);  
-	delete from scidb4geo_array_t where (tdim = OLD.name) and arrayname = (select name from "array" where id = OLD.array_id);  
+    delete from scidb4geo_array_s where (xdim = OLD.name or ydim = OLD.name) and arrayname = (select name from "array" where id = OLD.array_id) and namespace = (select namespace_name from "namespace_arrays" where array_id = OLD.array_id); 
+	delete from scidb4geo_array_v where (vdim = OLD.name) and arrayname = (select name from "array" where id = OLD.array_id) and namespace = (select namespace_name from "namespace_arrays" where array_id = OLD.array_id);
+	delete from scidb4geo_array_t where (tdim = OLD.name) and arrayname = (select name from "array" where id = OLD.array_id) and namespace = (select namespace_name from "namespace_arrays" where array_id = OLD.array_id);
   return NULL;
   end;
 $BODY$ LANGUAGE plpgsql;
