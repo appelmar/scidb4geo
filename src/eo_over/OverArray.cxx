@@ -130,8 +130,8 @@ namespace scidb4geo {
         p_cur = p_first;
         has_cur = true;
     }
-    
-     void OverChunkIterator::restart() {
+
+    void OverChunkIterator::restart() {
         p_cur = p_first;
         has_cur = true;
     }
@@ -318,12 +318,12 @@ namespace scidb4geo {
         assert(_ninstances > 0 && _instance_id < _ninstances);
 
         // Get reference information
-        vector<string> nameAB,namespaceAB;
-	
+        vector<string> nameAB, namespaceAB;
+
         nameAB.push_back(ArrayDesc::makeUnversionedName(_desc_A.getName()));
         nameAB.push_back(ArrayDesc::makeUnversionedName(_desc_B.getName()));
-	namespaceAB.push_back(_desc_A.getNamespaceName());
-	namespaceAB.push_back(_desc_B.getNamespaceName());
+        namespaceAB.push_back(_desc_A.getNamespaceName());
+        namespaceAB.push_back(_desc_B.getNamespaceName());
         vector<SpatialArrayInfo> srsAB = PostgresWrapper::instance()->dbGetSpatialRef(nameAB, namespaceAB);
         if (srsAB.size() != 2) {
             SCIDB4GEO_DEBUG("eo_over: at least one of both arrays is not spatially referenced, ignoring space in overlay operation.");

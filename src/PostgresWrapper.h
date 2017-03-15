@@ -39,7 +39,7 @@ namespace scidb4geo {
      */
     typedef struct {
         string arrayname;
-	string namespace_name;
+        string namespace_name;
         string xdim;
         string ydim;
         string auth_name;
@@ -51,7 +51,7 @@ namespace scidb4geo {
 
     typedef struct {
         string arrayname;
-	string namespace_name;
+        string namespace_name;
         string setting;
     } EOArrayInfo;
 
@@ -60,7 +60,7 @@ namespace scidb4geo {
      */
     typedef struct {
         string arrayname;
-	string namespace_name;
+        string namespace_name;
         string tdim;
         TReference *tref;
     } TemporalArrayInfo;
@@ -96,7 +96,7 @@ namespace scidb4geo {
         /**
          * Sets spatial reference of a given arrayname
          */
-        void dbSetSpatialRef(const string &arrayname, const string& namespace_name, const string &dim_x, const string &dim_y, const string &auth_name, int auth_srid, AffineTransform &A);
+        void dbSetSpatialRef(const string &arrayname, const string &namespace_name, const string &dim_x, const string &dim_y, const string &auth_name, int auth_srid, AffineTransform &A);
 
         /**
          * Gets spatial reference systems of a variable list of array namespace
@@ -106,9 +106,9 @@ namespace scidb4geo {
         /**
          * Returns spatial reference information for a single array
          */
-        SpatialArrayInfo dbGetSpatialRef(const string &arrayname, const string& namespace_name);
+        SpatialArrayInfo dbGetSpatialRef(const string &arrayname, const string &namespace_name);
 
-        SpatialArrayInfo dbGetSpatialRefOrEmpty(const string &arrayname, const string& namespace_name);
+        SpatialArrayInfo dbGetSpatialRefOrEmpty(const string &arrayname, const string &namespace_name);
 
         /**
          * Returns spatial reference information for all registered arrays
@@ -139,7 +139,7 @@ namespace scidb4geo {
          * Sets temporal reference of an array
          * @param
          */
-        void dbSetTemporalRef(const string &arrayName, const string& namespace_name, const string &dim_t, const string &t0, const string &dt);
+        void dbSetTemporalRef(const string &arrayName, const string &namespace_name, const string &dim_t, const string &t0, const string &dt);
 
         /**
             * Gets temporal reference systems of a variable list of array namespace
@@ -149,9 +149,9 @@ namespace scidb4geo {
         /**
              * Returns temporal reference information for a single array
              */
-        TemporalArrayInfo dbGetTemporalRef(const string &arrayname, const string& namespace_name);
+        TemporalArrayInfo dbGetTemporalRef(const string &arrayname, const string &namespace_name);
 
-        TemporalArrayInfo dbGetTemporalRefOrEmpty(const string &arrayname, const string& namespace_name);
+        TemporalArrayInfo dbGetTemporalRefOrEmpty(const string &arrayname, const string &namespace_name);
 
         /**
          * Returns temporal reference information for all registered arrays
@@ -181,22 +181,22 @@ namespace scidb4geo {
         /**
          * Gets a key value map of array metadata
          */
-        map<string, string> dbGetArrayMD(const string &arrayname, const string& namespace_name, const string &domain = "");
+        map<string, string> dbGetArrayMD(const string &arrayname, const string &namespace_name, const string &domain = "");
 
         /**
          * Sets or adds metadata to an array, values for existing key swill be overwritten, values for nonexisting keys will be added.
          */
-        void dbSetArrayMD(const string &arrayname, const string& namespace_name, map<string, string> &kv, const string &domain = "");
+        void dbSetArrayMD(const string &arrayname, const string &namespace_name, map<string, string> &kv, const string &domain = "");
 
         /**
          * Gets a key value map of attribute metadata
          */
-        map<string, string> dbGetAttributeMD(const string &arrayname, const string& namespace_name, const string &attrname, const string &domain = "");
+        map<string, string> dbGetAttributeMD(const string &arrayname, const string &namespace_name, const string &attrname, const string &domain = "");
 
         /**
          * Sets or adds metadata to an attribute, values for existing keys will be overwritten, values for nonexisting keys will be added.
          */
-        void dbSetAttributeMD(const string &arrayname, const string& namespace_name, const string &attrname, map<string, string> &kv, const string &domain = "");
+        void dbSetAttributeMD(const string &arrayname, const string &namespace_name, const string &attrname, map<string, string> &kv, const string &domain = "");
 
        private:
         static PostgresWrapper *_instance;

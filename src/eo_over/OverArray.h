@@ -90,7 +90,7 @@ namespace scidb4geo {
         virtual Coordinates const &getPosition();
         virtual bool setPosition(Coordinates const &pos);
         virtual void reset();
-	virtual void restart();
+        virtual void restart();
         ConstChunk const &getChunk();
         virtual std::shared_ptr<Query> getQuery() {
             return _query;

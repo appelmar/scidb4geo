@@ -68,12 +68,12 @@ namespace scidb4geo {
             string namespaceName;
             string arrayName;
             vector<string> arrays(_parameters.size());
-	    vector<string> ns(_parameters.size());
+            vector<string> ns(_parameters.size());
 
             for (uint16_t i = 0; i < _parameters.size(); ++i) {
                 query->getNamespaceArrayNames(((std::shared_ptr<OperatorParamReference> &)_parameters[i])->getObjectName(), namespaceName, arrayName);
                 arrays.push_back(arrayName);
-		ns.push_back(namespaceName);
+                ns.push_back(namespaceName);
             }
 
             vector<SpatialArrayInfo> info_s = PostgresWrapper::instance()->dbGetSpatialRef(arrays, ns);
@@ -100,8 +100,8 @@ namespace scidb4geo {
                 query->getNamespaceArrayNames(*it, namespaceName, arrayName);
                 //ArrayID arrayID = query->getCatalogVersion(namespaceName, arrayName);
                 ArrayDesc arrayDesc;
-		ArrayID id = SystemCatalog::getInstance()->getArrayId(arrayName, namespaceName); 
-		SystemCatalog::getInstance()->getArrayDesc(id, arrayDesc);
+                ArrayID id = SystemCatalog::getInstance()->getArrayId(namespaceName, arrayName);
+                SystemCatalog::getInstance()->getArrayDesc(id, arrayDesc);
                 //SystemCatalog::getInstance()->getArrayDesc(arrayName, SystemCatalog::ANY_VERSION, arrayDesc);
 
                 int xdim_idx = -1;

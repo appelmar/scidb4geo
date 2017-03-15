@@ -74,7 +74,7 @@ namespace scidb4geo {
             ArrayDesc arrayDesc;
             SystemCatalog::getInstance()->getArrayDesc(arrayID, arrayDesc);
 
-            map<string, string> arraymd = PostgresWrapper::instance()->dbGetArrayMD(arrayname,namespacename);  // TODO: Add domain
+            map<string, string> arraymd = PostgresWrapper::instance()->dbGetArrayMD(arrayname, namespacename);  // TODO: Add domain
 
             for (map<string, string>::iterator it = arraymd.begin(); it != arraymd.end(); ++it) {
                 Value tuple[5];

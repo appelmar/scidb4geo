@@ -126,7 +126,7 @@ namespace scidb4geo {
             }
 
             // Set SRS of target array
-            PostgresWrapper::instance()->dbSetSpatialRef(_arrayNameTo,_namespaceNameTo, info.xdim, info.ydim, info.auth_name, info.auth_srid, info.A);
+            PostgresWrapper::instance()->dbSetSpatialRef(_arrayNameTo, _namespaceNameTo, info.xdim, info.ydim, info.auth_name, info.auth_srid, info.A);
         }
 
         std::shared_ptr<Array> execute(std::vector<std::shared_ptr<Array> > &inputArrays,

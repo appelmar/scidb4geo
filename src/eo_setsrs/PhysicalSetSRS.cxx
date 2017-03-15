@@ -82,7 +82,7 @@ namespace scidb4geo {
                 string array2;
                 shared_ptr<OperatorParamArrayReference> &arrayRef2 = (shared_ptr<OperatorParamArrayReference> &)_parameters[1];
                 query->getNamespaceArrayNames(arrayRef2->getObjectName(), namespace2, array2);
-                srs_info = PostgresWrapper::instance()->dbGetSpatialRef(array2,namespace2);
+                srs_info = PostgresWrapper::instance()->dbGetSpatialRef(array2, namespace2);
 
             } else {
                 // Construct SRS object out of parameters
@@ -122,7 +122,7 @@ namespace scidb4geo {
             }
 
             // Add to system catalog
-            PostgresWrapper::instance()->dbSetSpatialRef(_arrayName,_namespaceName, srs_info.xdim, srs_info.ydim, srs_info.auth_name, srs_info.auth_srid, srs_info.A);
+            PostgresWrapper::instance()->dbSetSpatialRef(_arrayName, _namespaceName, srs_info.xdim, srs_info.ydim, srs_info.auth_name, srs_info.auth_srid, srs_info.A);
         }
 
         std::shared_ptr<Array> execute(std::vector<std::shared_ptr<Array> > &inputArrays,

@@ -339,8 +339,7 @@ namespace scidb4geo {
         _query = query;
         _ninstances = query->getInstancesCount();
         _instance_id = query->getInstanceID();
-	
-	
+
         _srs = PostgresWrapper::instance()->dbGetSpatialRefOrEmpty(ArrayDesc::makeUnversionedName(array_in->getName()), array_in->getArrayDesc().getNamespaceName());
         if (_srs.arrayname.empty()) {
             SCIDB4GEO_DEBUG("eo_coords: array is not spatially referenced, ignoring space.");
@@ -355,7 +354,7 @@ namespace scidb4geo {
             }
         }
 
-        _trs = PostgresWrapper::instance()->dbGetTemporalRefOrEmpty(ArrayDesc::makeUnversionedName(array_in->getName()),array_in->getArrayDesc().getNamespaceName());
+        _trs = PostgresWrapper::instance()->dbGetTemporalRefOrEmpty(ArrayDesc::makeUnversionedName(array_in->getName()), array_in->getArrayDesc().getNamespaceName());
         if (_trs.arrayname.empty()) {
             SCIDB4GEO_DEBUG("eo_coords: array is not temporally referenced, ignoring date and time.");
         } else {

@@ -94,7 +94,7 @@ namespace scidb4geo {
                 PostgresWrapper::instance()->dbSetArrayMD(_arrayName, _namespaceName, kv);  // TODO: Add domain
             } else if (_parameters.size() == 4) {
                 string attrname = ((std::shared_ptr<OperatorParamPhysicalExpression> &)_parameters[1])->getExpression()->evaluate().getString();
-                PostgresWrapper::instance()->dbSetAttributeMD(_arrayName,_namespaceName, attrname, kv);  // TODO: Add domain
+                PostgresWrapper::instance()->dbSetAttributeMD(_arrayName, _namespaceName, attrname, kv);  // TODO: Add domain
             }
         }
 

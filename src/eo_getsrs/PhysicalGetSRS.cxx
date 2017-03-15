@@ -76,7 +76,7 @@ namespace scidb4geo {
                 namespaces.push_back(namespaceName);
             }
 
-            vector<SpatialArrayInfo> infolist = PostgresWrapper::instance()->dbGetSpatialRef(arrays,namespaces);
+            vector<SpatialArrayInfo> infolist = PostgresWrapper::instance()->dbGetSpatialRef(arrays, namespaces);
 
             std::shared_ptr<TupleArray> tuples(std::make_shared<TupleArray>(_schema, _arena));
 

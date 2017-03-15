@@ -77,7 +77,7 @@ namespace scidb4geo {
                 namespaces.push_back(namespaceName);
             }
 
-            vector<TemporalArrayInfo> infolist = PostgresWrapper::instance()->dbGetTemporalRef(arrays,namespaces);
+            vector<TemporalArrayInfo> infolist = PostgresWrapper::instance()->dbGetTemporalRef(arrays, namespaces);
 
             std::shared_ptr<TupleArray> tuples(std::make_shared<TupleArray>(_schema, _arena));
 
@@ -93,10 +93,10 @@ namespace scidb4geo {
                 tuple[5].setString("");
 
                 ArrayDesc arrayDesc;
-		ArrayID id = SystemCatalog::getInstance()->getArrayId(infolist[i].arrayname, infolist[i].namespace_name); // TODO
-		SystemCatalog::getInstance()->getArrayDesc(id, arrayDesc);
+                ArrayID id = SystemCatalog::getInstance()->getArrayId(infolist[i].namespace_name, infolist[i].arrayname);  // TODO
+                SystemCatalog::getInstance()->getArrayDesc(id, arrayDesc);
                 //SystemCatalog::getInstance()->getArrayDesc(infolist[i].arrayname, query->getCatalogVersion(infolist[i].arrayname), LAST_VERSION, arrayDesc);
-		//SystemCatalog::getInstance()->getArrayDesc()
+                //SystemCatalog::getInstance()->getArrayDesc()
                 //                 ArrayID arrayId = SystemCatalog::getInstance()->findArrayByName ( infolist[i].arrayname );
                 //                 std::shared_ptr<ArrayDesc> arrayDesc = SystemCatalog::getInstance()->getArrayDesc ( arrayId );
                 Dimensions dims = arrayDesc.getDimensions();
