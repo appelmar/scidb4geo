@@ -87,21 +87,43 @@ create table scidb4geo_attribute_md (
 create or replace function scidb4geo_proc_array_rename() returns trigger as
 $BODY$
   begin
-    update scidb4geo_array_s      set arrayname = NEW.array_name, namepace = NEW.namespace_name where arrayname = OLD.array_name and namespace = OLD.namespace_name;
-    update scidb4geo_array_v      set arrayname = NEW.array_name, namepace = NEW.namespace_name where arrayname = OLD.array_name and namespace = OLD.namespace_name;
-    update scidb4geo_array_t      set arrayname = NEW.array_name, namepace = NEW.namespace_name where arrayname = OLD.array_name and namespace = OLD.namespace_name;
-    update scidb4geo_array_md     set arrayname = NEW.array_name, namepace = NEW.namespace_name where arrayname = OLD.array_name and namespace = OLD.namespace_name;
+    update scidb4geo_array_s      set arrayname = NEW.name where arrayname = OLD.name;
+    update scidb4geo_array_v      set arrayname = NEW.name where arrayname = OLD.name;
+    update scidb4geo_array_t      set arrayname = NEW.name where arrayname = OLD.name;
+    update scidb4geo_array_md     set arrayname = NEW.name where arrayname = OLD.name;
   return NULL;
   end;
 $BODY$ LANGUAGE plpgsql;
 	
 
 create trigger scidb4geo_trig_array_rename
-  after update on "namespace_arrays"
+  after update on "array"
   for each row
-  when (OLD.namespace_name is distinct from NEW.namespace_name or OLD.array_name is distinct from NEW.array_name)
+  when (OLD.name is distinct from NEW.name)
   execute procedure scidb4geo_proc_array_rename();
   
+  
+  
+  
+-- Trigger namespace rename operations	
+create or replace function scidb4geo_proc_namespace_rename() returns trigger as
+$BODY$
+  begin
+    update scidb4geo_array_s      set namespace = NEW.name where namespace = OLD.name;
+    update scidb4geo_array_v      set namespace = NEW.name where namespace = OLD.name;
+    update scidb4geo_array_t      set namespace = NEW.name where namespace = OLD.name;
+    update scidb4geo_array_md     set namespace = NEW.name where namespace = OLD.name;
+  return NULL;
+  end;
+$BODY$ LANGUAGE plpgsql;
+	
+
+create trigger scidb4geo_trig_namespace_rename
+  after update on "namespaces"
+  for each row
+  when (OLD.name is distinct from NEW.name)
+  execute procedure scidb4geo_proc_namespace_rename();
+    
   
  
 	
@@ -109,22 +131,50 @@ create trigger scidb4geo_trig_array_rename
 create or replace function scidb4geo_proc_array_remove() returns trigger as
 $BODY$
   begin
-  delete from scidb4geo_array_s       where arrayname = OLD.array_name and namespace = OLD.namespace_name;
-  delete from scidb4geo_array_v       where arrayname = OLD.array_name and namespace = OLD.namespace_name;
-  delete from scidb4geo_array_t       where arrayname = OLD.array_name and namespace = OLD.namespace_name;
-  delete from scidb4geo_array_md      where arrayname = OLD.array_name and namespace = OLD.namespace_name;
-  delete from scidb4geo_attribute_md  where arrayid   = OLD.array_id;
+  delete from scidb4geo_array_s       where arrayname = OLD.name;
+  delete from scidb4geo_array_v       where arrayname = OLD.name;
+  delete from scidb4geo_array_t       where arrayname = OLD.name;
+  delete from scidb4geo_array_md      where arrayname = OLD.name;
+  delete from scidb4geo_attribute_md  where arrayid   = OLD.id;
   return NULL;
   end;
 $BODY$ LANGUAGE plpgsql;
 	
 
 create trigger scidb4geo_trig_array_remove
-  after delete on "namespace_arrays"
+  after delete on "array"
   for each row
   execute procedure scidb4geo_proc_array_remove();
   
   
+ 
+ 
+
+	
+-- Trigger namespace remove operations	
+create or replace function scidb4geo_proc_namespace_remove() returns trigger as
+$BODY$
+  begin
+  delete from scidb4geo_array_s       where namespace = OLD.name;
+  delete from scidb4geo_array_v       where namespace = OLD.name;
+  delete from scidb4geo_array_t       where namespace = OLD.name;
+  delete from scidb4geo_array_md      where namespace = OLD.name;
+  delete from scidb4geo_attribute_md  where arrayid  in (select array_id from "namespace_arrays" where namespace_id=OLD.id);
+  return NULL;
+  end;
+$BODY$ LANGUAGE plpgsql;
+	
+
+create trigger scidb4geo_trig_namespace_remove
+  after delete on "namespaces"
+  for each row
+  execute procedure scidb4geo_proc_namespace_remove();
+ 
+ 
+ 
+ 
+ 
+ 
  
   
 -- Trigger array dimension rename operations	  
