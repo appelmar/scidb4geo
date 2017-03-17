@@ -1,0 +1,63 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+</head>
+<body>
+<div id="eo_getmd" class="section level2">
+<h2>eo_getmd()</h2>
+<p>Retrieve additional key value metadata of a given array.</p>
+<div id="synopsis" class="section level3">
+<h3>Synopsis</h3>
+<pre><code>AFL% eo_getmd(array);</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Argument</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left"><code>array</code></td>
+<td align="left">Existing array</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="result" class="section level3">
+<h3>Result</h3>
+<p>This is a data definition operator and won’t return any results. A one-dimensional table-like array with rows for all key value metadata pairs and attributes (arrayname,attribute,domain,key,value) where attribute is an empty string for general array (non-attribute) metadata. All attributes are strings.</p>
+</div>
+<div id="details" class="section level3">
+<h3>Details</h3>
+<p>This operator returns all key value metadata of an array. This includes both general array metadat like additional data generation information as well as attribute specific information like no data values, error code definitions, or units. Domain strings can be used to organize metadata items in groups. This is in line with the GDAL metadata model.</p>
+</div>
+<div id="examples" class="section level3">
+<h3>Examples</h3>
+<ol style="list-style-type: decimal">
+<li><p>Create an array that covers the whole world with 0.1 degrees pixel size and one day temporal resolution starting at January 1st, 2015.</p>
+<pre><code>store(build(&lt;val:double&gt;[lat=0:179,256,0,lon=0:359,256,0],double(random()) / double(2147483647)),world);  
+eo_setsrs(world,'lon','lat','EPSG',4326,'x0=-180 y0=90 a11=1 a22=-1');
+eo_settrs(world,'t','2015-01-01', 'P1D');
+eo_setmd(world, 'AREA_OR_POINT,Description','AREA,A random array');
+eo_setmd(world, 'val', 'ColorInterp,NODATA_VALUE', 'GCI_GrayIndex,-1');
+eo_getmd(world);
+remove(world);</code></pre></li>
+</ol>
+</div>
+<div id="notes" class="section level3">
+<h3>Notes</h3>
+<p>See the <a href="http://www.gdal.org/gdal_datamodel.html">GDAL metadata model</a> for additional information.</p>
+</div>
+<div id="authors" class="section level3">
+<h3>Author(s)</h3>
+<p>Marius Appel - <a href="mailto:marius.appel@uni-muenster.de">marius.appel@uni-muenster.de</a></p>
+</div>
+</div>
+</body>
+</html>

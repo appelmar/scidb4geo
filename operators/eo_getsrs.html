@@ -1,0 +1,105 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+</head>
+<body>
+<div id="eo_getsrs" class="section level2">
+<h2>eo_getsrs()</h2>
+<p>Gets the spatial reference of existing arrays.</p>
+<div id="synopsis" class="section level3">
+<h3>Synopsis</h3>
+<pre><code>AFL% eo_getsrs([...]);</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Argument</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left"><code>...</code></td>
+<td align="left">Optional list of arrays</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="result" class="section level3">
+<h3>Result</h3>
+<p>A one-dimensional table-like array with rows for all given arrays and attributes (name, xdim, ydim, auth_name, auth_srid, srtext, proj4text). If no array is given as argument, the operator considers all spatially referenced arrays. Result attributes are described below.</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Attribute</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left"><code>name</code></td>
+<td align="left">Array name</td>
+</tr>
+<tr class="even">
+<td align="left"><code>xdim</code></td>
+<td align="left">Name of the array dimension representing easting or longitude</td>
+</tr>
+<tr class="odd">
+<td align="left"><code>ydim</code></td>
+<td align="left">Name of the array dimension representing northing or latitude</td>
+</tr>
+<tr class="even">
+<td align="left"><code>auth_name</code></td>
+<td align="left">Authority name of the spatial reference system</td>
+</tr>
+<tr class="odd">
+<td align="left"><code>auth_srid</code></td>
+<td align="left">Unique identifier of the spatial reference system</td>
+</tr>
+<tr class="even">
+<td align="left"><code>srtext</code></td>
+<td align="left">WKT string of the reference system</td>
+</tr>
+<tr class="odd">
+<td align="left"><code>proj4text</code></td>
+<td align="left">Proj4 string of the reference system</td>
+</tr>
+<tr class="even">
+<td align="left"><code>A</code></td>
+<td align="left">String definintion for an affine transformation that maps array coordinates to world coordinates</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="details" class="section level3">
+<h3>Details</h3>
+<p>The affine transformation A is used to relate image coordinates to referenced coordinates. Its string definition takes a space separated list of parameters x0,y0,a11,a12,a21,a22 with default values representing the identity transformation (0,0,1,0,0,1). Notice that the affine transformation is in line with the <a href="http://www.gdal.org/gdal_datamodel.html">GDAL data model</a>.</p>
+</div>
+<div id="examples" class="section level3">
+<h3>Examples</h3>
+<ol style="list-style-type: decimal">
+<li><p>Create an array that covers the whole world with 1 degree pixel size and one day temporal resolution starting at January 1st, 2015.</p>
+<pre><code>store(build(&lt;val:double&gt;[lat=0:179,256,0,lon=0:359,256,0],double(random()) / double(2147483647)),world);  
+eo_setsrs(world,'lon','lat','EPSG',4326,'x0=-180 y0=90 a11=1 a22=-1');</code></pre></li>
+<li><p>Get spatial reference information</p>
+<pre><code>eo_getsrs(world);</code></pre></li>
+<li><p>Get partial reference information</p>
+<pre><code>project(eo_getsrs(world),arrayname, auth_name, auth_id) ;</code></pre></li>
+<li><p>Clean up</p>
+<pre><code>remove(world);</code></pre></li>
+</ol>
+</div>
+<div id="notes" class="section level3">
+<h3>Notes</h3>
+</div>
+<div id="authors" class="section level3">
+<h3>Author(s)</h3>
+<p>Marius Appel - <a href="mailto:marius.appel@uni-muenster.de">marius.appel@uni-muenster.de</a></p>
+</div>
+</div>
+</body>
+</html>

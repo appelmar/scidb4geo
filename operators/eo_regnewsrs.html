@@ -1,0 +1,69 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+</head>
+<body>
+<div id="eo_regnewrs" class="section level2">
+<h2>eo_regnewrs()</h2>
+<p>Adds a custom spatial reference system to the catalog.</p>
+<div id="synopsis" class="section level3">
+<h3>Synopsis</h3>
+<pre><code>AFL% eo_regnewsrs(auth_name, auth_srid, wkt, proj4);</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Argument</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left"><code>auth_name</code></td>
+<td align="left">Authority name as a string</td>
+</tr>
+<tr class="even">
+<td align="left"><code>auth_srid</code></td>
+<td align="left">Integer identifier</td>
+</tr>
+<tr class="odd">
+<td align="left"><code>wkt</code></td>
+<td align="left">Well-known text definition as a string</td>
+</tr>
+<tr class="even">
+<td align="left"><code>proj4</code></td>
+<td align="left">Proj4 definition as a string</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="result" class="section level3">
+<h3>Result</h3>
+<p>This is a data definition operator and won’t return any results.</p>
+</div>
+<div id="details" class="section level3">
+<h3>Details</h3>
+<p>This operator adds a new spatial reference system and its WKT and proj4 definitions to the catalog.</p>
+</div>
+<div id="examples" class="section level3">
+<h3>Examples</h3>
+<ol style="list-style-type: decimal">
+<li><p>Add the MODIS sinusoidal systems (as on <a href="http://spatialreference.org/ref/sr-org/6842/"><a href="http://spatialreference.org/ref/sr-org/6842/">http://spatialreference.org/ref/sr-org/6842/</a></a>)</p>
+<pre><code>eo_regnewsrs('SR-ORG',6842, 'PROJCS[&quot;Sinusoidal&quot;,GEOGCS[&quot;GCS_Undefined&quot;,DATUM[&quot;Undefined&quot;,SPHEROID[&quot;User_Defined_Spheroid&quot;,6371007.181,0.0]],PRIMEM[&quot;Greenwich&quot;,0.0],UNIT[&quot;Degree&quot;,0.0174532925199433]],PROJECTION[&quot;Sinusoidal&quot;],PARAMETER[&quot;False_Easting&quot;,0.0],PARAMETER[&quot;False_Northing&quot;,0.0],PARAMETER[&quot;Central_Meridian&quot;,0.0],UNIT[&quot;Meter&quot;,1.0]]','+proj=sinu +lon_0=0 +x_0=0 +y_0=0 +a=6371007.181 +b=6371007.181 +units=m +no_defs');</code></pre></li>
+</ol>
+</div>
+<div id="notes" class="section level3">
+<h3>Notes</h3>
+<p>The combination of authority name and ID must be unique and must not exist before.</p>
+</div>
+<div id="authors" class="section level3">
+<h3>Author(s)</h3>
+<p>Marius Appel - <a href="mailto:marius.appel@uni-muenster.de">marius.appel@uni-muenster.de</a></p>
+</div>
+</div>
+</body>
+</html>

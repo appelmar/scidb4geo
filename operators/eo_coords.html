@@ -1,0 +1,44 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+</head>
+<body>
+<div id="eo_coords" class="section level2">
+<h2>eo_coords()</h2>
+<p>Derives referenced coordinates of array cells as additional attributes.</p>
+<div id="synopsis" class="section level3">
+<h3>Synopsis</h3>
+<pre><code>AFL% eo_coords(A);</code></pre>
+</div>
+<div id="result" class="section level3">
+<h3>Result</h3>
+<p>The result has the same dimensionality as A but additional attributes <code>eo_x</code>, <code>eo_y</code>, and <code>eo_t</code>, with referenced coordinates for all array cells. The cell’s integer index and the affine transformation is used to convert array coordinates to referenced coordinates.</p>
+</div>
+<div id="examples" class="section level3">
+<h3>Examples</h3>
+<ol style="list-style-type: decimal">
+<li><p>Create a spatiotemporal array, compute cell coordinates, and derive the physical extent</p>
+<pre><code>store(build(&lt;val:double&gt;[lat=0:179,256,0,lon=0:359,256,0,t=0:364,32,0],double(random()) / double(2147483647)),A); 
+eo_setsrs(A,'lon','lat','EPSG',4326,'x0=-180 y0=90 a11=1 a22=-1');
+eo_settrs(A,'t','2001-01-01', 'P1D');
+aggregate(eo_coords(A), min(eo_t), max(eo_t), min(eo_x), max(eo_x), min(eo_y), max(eo_y));</code></pre></li>
+<li><p>Clean up</p>
+<pre><code>remove(A);</code></pre></li>
+</ol>
+</div>
+<div id="notes" class="section level3">
+<h3>Notes</h3>
+<p>The input array must be persistent and referenced, i.e. using nested AFL queries as input is not supported due to missing reference.</p>
+</div>
+<div id="authors" class="section level3">
+<h3>Author(s)</h3>
+<p>Marius Appel - <a href="mailto:marius.appel@uni-muenster.de">marius.appel@uni-muenster.de</a></p>
+</div>
+</div>
+</body>
+</html>

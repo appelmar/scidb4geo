@@ -1,0 +1,59 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+</head>
+<body>
+<div id="eo_all" class="section level2">
+<h2>eo_all()</h2>
+<p>Collects complete metadata of arrays</p>
+<div id="synopsis" class="section level3">
+<h3>Synopsis</h3>
+<pre><code>AFL% eo_all(...);</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Argument</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left"><code>...</code></td>
+<td align="left">Optional list of arrays</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="result" class="section level3">
+<h3>Result</h3>
+<p>A one-dimensional table-like array with rows for all given arrays and attributes (name, dimensions, attributes, srs, trs, extent). These are string representations of <code>dimensions(name)</code>, <code>attributes(name)</code>, <code>eo_getsrs(name)</code>, <code>eo_gettrs(name)</code>, and <code>eo_extent(name)</code> respectively. As such, dimensions is the output of <code>dimensions(name)</code> where single dimensions are enclosed in square brackets and its properties like chunk sizes or boundaries are separated by three semicolons. Similarly, attributes contains the result of <code>attributes(name)</code> but uses angle brackets.</p>
+</div>
+<div id="details" class="section level3">
+<h3>Details</h3>
+<p>This operator is used to fetch metadata of arrays (dimensions, attributes, geographic reference) with only one AFL query. If no input array is provided, metadata of all spatially or temporally referenced arrays will be returned. Otherwise only provided arrays are considered.</p>
+</div>
+<div id="examples" class="section level3">
+<h3>Examples</h3>
+<ol style="list-style-type: decimal">
+<li><p>Create a spatial array and return complete metadata at once.</p>
+<pre><code>store(build(&lt;val:double&gt;[lat=0:179,256,0,lon=0:359,256,0],double(random()) / double(2147483647)),world);  
+eo_setsrs(world,'lon','lat','EPSG',4326,'x0=-180 y0=90 a11=1 a22=-1');
+eo_all(world); 
+remove(world);</code></pre></li>
+</ol>
+</div>
+<div id="notes" class="section level3">
+<h3>Notes</h3>
+</div>
+<div id="authors" class="section level3">
+<h3>Author(s)</h3>
+<p>Marius Appel - <a href="mailto:marius.appel@uni-muenster.de">marius.appel@uni-muenster.de</a></p>
+</div>
+</div>
+</body>
+</html>

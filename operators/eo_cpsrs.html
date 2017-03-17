@@ -1,0 +1,66 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+</head>
+<body>
+<div id="eo_cpsrs" class="section level2">
+<h2>eo_cpsrs()</h2>
+<p>Copies the spatial reference of a source array to a target array.</p>
+<p><strong>DEPRECATED</strong> (use <code>eo_setsrs(target, source)</code> instead)</p>
+<div id="synopsis" class="section level3">
+<h3>Synopsis</h3>
+<pre><code>AFL% eo_cpsrs(source, target);</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Argument</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left"><code>source</code></td>
+<td align="left">Source array</td>
+</tr>
+<tr class="even">
+<td align="left"><code>target</code></td>
+<td align="left">Target array</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="result" class="section level3">
+<h3>Result</h3>
+<p>This is a data definition operator and won’t return any results.</p>
+</div>
+<div id="details" class="section level3">
+<h3>Details</h3>
+<p>This operator sets the spatial reference of the target array to the same system as the source array. Dimension names of spatial axes must match. This is mostly useful to call after the source array has been processed and results are stored as a new array.</p>
+</div>
+<div id="examples" class="section level3">
+<h3>Examples</h3>
+<ol style="list-style-type: decimal">
+<li><p>Create a spatially referenced array, perform some analysis, and copy the reference to the result array.</p>
+<pre><code>store(build(&lt;val:double&gt;[lat=0:179,256,0,lon=0:359,256,0],double(random()) / double(2147483647)),world);  
+eo_setsrs(world,'lon','lat','EPSG',4326,'x0=-180 y0=90 a11=1 a22=-1');
+store(apply(filter(world,val &gt; 0.5), newval, 1), world_new);
+eo_cpsrs(world,world_new);
+remove(world);
+remove(world_new);</code></pre></li>
+</ol>
+</div>
+<div id="notes" class="section level3">
+<h3>Notes</h3>
+</div>
+<div id="authors" class="section level3">
+<h3>Author(s)</h3>
+<p>Marius Appel - <a href="mailto:marius.appel@uni-muenster.de">marius.appel@uni-muenster.de</a></p>
+</div>
+</div>
+</body>
+</html>

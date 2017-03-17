@@ -1,0 +1,61 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+</head>
+<body>
+<div id="eo_over" class="section level2">
+<h2>eo_over()</h2>
+<p>Overlays two geographically referenced arrays and returns array coordinates of the target array which overlay specific cells of the source array.</p>
+<div id="synopsis" class="section level3">
+<h3>Synopsis</h3>
+<pre><code>AFL% eo_over(A, B);</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Argument</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left"><code>A</code></td>
+<td align="left">Source array</td>
+</tr>
+<tr class="even">
+<td align="left"><code>B</code></td>
+<td align="left">Target array</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="result" class="section level3">
+<h3>Result</h3>
+<p>The result array has the same dimensionality and the same number of cells as the source array A. Attribute values of result cells are coordinates of B at which A and B mutually overlay. Depending on the setting of A and B, The output always contains 4 attributes over_x, over_y, over_t, and over_v. Depending on the setting of A and B, i.e. whether the arrays have spatial, temporal, spatiotemporal, or even vertical geographic reference, particular attributes values might be null for all cells.</p>
+</div>
+<div id="details" class="section level3">
+<h3>Details</h3>
+<p>This operator can be used to insert earth-observation data by tiles, and spatiotemporally joining datasets for statistical analyses.</p>
+</div>
+<div id="examples" class="section level3">
+<h3>Examples</h3>
+<ol style="list-style-type: decimal">
+<li>Insert two temporal slices into a three dimensional array. ``` store(build(<val:double>[lat=0:1799,256,0,lon=0:3599,256,0, t=0:364,16,0],1),world_jan1);<br />eo_setsrs(world,‘lon’,‘lat’,‘EPSG’,4326,‘x0=-180 y0=90 a11=0.1 a22=-0.1’); eo_settrs(world,‘t’,‘2015-01-01’, ‘P1D’);</li>
+</ol>
+<p>store(build(<val:double>[lat2=0:1799,256,0,lon2=0:3599,256,0, t2=0:364,16,0],2),world_jan2);<br />eo_setsrs(world,‘lon2’,‘lat2’,‘EPSG’,4326,‘x0=-180 y0=90 a11=0.1 a22=-0.1’); eo_settrs(world,‘t2’,‘2015-01-02’, ‘P1D’);</p>
+<p>insert(redimension(attribute_rename(join(world_jan2, eo_over(world_jan2,world_jan1)), over_x, x, over_y, y, over_t, t), world_jan1), world_jan1); ```</p>
+</div>
+<div id="notes" class="section level3">
+<h3>Notes</h3>
+</div>
+<div id="authors" class="section level3">
+<h3>Author(s)</h3>
+<p>Marius Appel - <a href="mailto:marius.appel@uni-muenster.de">marius.appel@uni-muenster.de</a></p>
+</div>
+</div>
+</body>
+</html>

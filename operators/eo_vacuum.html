@@ -1,0 +1,41 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+</head>
+<body>
+<div id="eo_vacuum" class="section level2">
+<h2>eo_vacuum()</h2>
+<p>Removes dead geographic reference entries from the system catalog and cleans up a few other things.</p>
+<p><strong>THIS METHOD IS NOT YET AVAILABLE</strong></p>
+<div id="synopsis" class="section level3">
+<h3>Synopsis</h3>
+<pre><code>AFL% eo_vacuum();</code></pre>
+</div>
+<div id="result" class="section level3">
+<h3>Result</h3>
+<p>This is a maintanance operator and won’t create any results.</p>
+</div>
+<div id="details" class="section level3">
+<h3>Details</h3>
+<p>From time to time, geographic arrays might be removed, spatial / temporal / vertical dimensions might be renamed or other actions can lead to an inconsistent state regarding georeference metadata. Although this is usually detected and resolved automatically, it might be sometimes needed to clean the database manually using this operator. This is in particular true for older versions of SciDB using outdated Postgres installations without support for some triggers.</p>
+</div>
+<div id="examples" class="section level3">
+<h3>Examples</h3>
+<pre><code>eo_vacuum()</code></pre>
+</div>
+<div id="notes" class="section level3">
+<h3>Notes</h3>
+<p><strong>THIS METHOD IS NOT YET AVAILABLE</strong></p>
+</div>
+<div id="authors" class="section level3">
+<h3>Author(s)</h3>
+<p>Marius Appel - <a href="mailto:marius.appel@uni-muenster.de">marius.appel@uni-muenster.de</a></p>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+</head>
+<body>
+<div id="eo_gettrs" class="section level2">
+<h2>eo_gettrs()</h2>
+<p>Gets the temporal reference of existing arrays.</p>
+<div id="synopsis" class="section level3">
+<h3>Synopsis</h3>
+<pre><code>AFL% eo_gettrs([...]);</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Argument</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left"><code>...</code></td>
+<td align="left">Optional list of arrays</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="result" class="section level3">
+<h3>Result</h3>
+<p>A one-dimensional table-like array with rows for all given arrays and attributes (name,tdim,t0,dt,tMin,tMax). If no array is given as argument, the operator considers all temporally referenced arrays. Result attributes are described below.</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Attribute</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left"><code>name</code></td>
+<td align="left">Array name</td>
+</tr>
+<tr class="even">
+<td align="left"><code>tdim</code></td>
+<td align="left">Name of the array dimension representing time</td>
+</tr>
+<tr class="odd">
+<td align="left"><code>t0</code></td>
+<td align="left">Datetime at the origin of the temporal dimension as ISO8601 string</td>
+</tr>
+<tr class="even">
+<td align="left"><code>dt</code></td>
+<td align="left">Temporal distance between subsequent cells as ISO8601 date / time period string</td>
+</tr>
+<tr class="odd">
+<td align="left"><code>tMin</code></td>
+<td align="left">Minimum datetime covered by an array</td>
+</tr>
+<tr class="even">
+<td align="left"><code>tMax</code></td>
+<td align="left">Maximum datetime covered by an array</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="examples" class="section level3">
+<h3>Examples</h3>
+<ol style="list-style-type: decimal">
+<li><p>Create a spatiotemporal array</p>
+<pre><code>set no fetch; # do not print results of store
+store(build(&lt;val:double&gt;[lat=0:179,256,0,lon=0:359,256,0,t=0:364,32,0],double(random()) / double(2147483647)),world); 
+eo_setsrs(world,'lon','lat','EPSG',4326,'x0=-180 y0=90 a11=1 a22=-1');
+eo_settrs(world,'t','2001-01-01', 'P1D');
+set fetch;</code></pre></li>
+<li><p>Get temporal reference information</p>
+<pre><code>eo_gettrs(world);</code></pre></li>
+<li><p>Clean up</p>
+<pre><code>remove(world);</code></pre></li>
+</ol>
+</div>
+<div id="notes" class="section level3">
+<h3>Notes</h3>
+</div>
+<div id="authors" class="section level3">
+<h3>Author(s)</h3>
+<p>Marius Appel - <a href="mailto:marius.appel@uni-muenster.de">marius.appel@uni-muenster.de</a></p>
+</div>
+</div>
+</body>
+</html>

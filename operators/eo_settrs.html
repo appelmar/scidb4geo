@@ -1,0 +1,71 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+</head>
+<body>
+<div id="eo_settrs" class="section level2">
+<h2>eo_settrs()</h2>
+<p>Sets the temporal reference of an existing array.</p>
+<div id="synopsis" class="section level3">
+<h3>Synopsis</h3>
+<pre><code>AFL% eo_settrs(array, tdim, t0, dt  );
+AFL% eo_settrs(array_target, array_source);</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Argument</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left"><code>array_target</code></td>
+<td align="left">Existing array whose temporal reference will be set</td>
+</tr>
+<tr class="even">
+<td align="left"><code>array_source</code></td>
+<td align="left">Existing array from which the temporal reference will be copied to the target array</td>
+</tr>
+<tr class="odd">
+<td align="left"><code>tdim</code></td>
+<td align="left">Name of the temporal dimension as a string</td>
+</tr>
+<tr class="even">
+<td align="left"><code>t0</code></td>
+<td align="left">Datetime of the cell at t=0, i.e. the starting date given as a string according to ISO8601 e.g. ‘2015-02-05T12:04:11’</td>
+</tr>
+<tr class="odd">
+<td align="left"><code>dt</code></td>
+<td align="left">Datetime interval of temprally neighbouring cells as a string according to ISO8601 for period, e.g. ‘P16D or ’PT3H’</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="result" class="section level3">
+<h3>Result</h3>
+<p>This is a data definition operator and won’t return any results.</p>
+</div>
+<div id="examples" class="section level3">
+<h3>Examples</h3>
+<ol style="list-style-type: decimal">
+<li><p>Create an array that covers the whole world with 1 degree pixel size and one day temporal resolution starting at January 1st, 2015.</p>
+<pre><code>store(build(&lt;val:double&gt;[lat=0:1799,256,0,lon=0:3599,256,0, t=0:364,16,0],1),world);  
+eo_setsrs(world,'lon','lat','EPSG',4326,'x0=-180 y0=90 a11=0.1 a22=-0.1');
+eo_settrs(world,'t','2015-01-01', 'P1D');</code></pre></li>
+</ol>
+</div>
+<div id="notes" class="section level3">
+<h3>Notes</h3>
+</div>
+<div id="authors" class="section level3">
+<h3>Author(s)</h3>
+<p>Marius Appel - <a href="mailto:marius.appel@uni-muenster.de">marius.appel@uni-muenster.de</a></p>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+</head>
+<body>
+<div id="eo_extent" class="section level2">
+<h2>eo_extent()</h2>
+<p>Computes the geographical extent of a given array.</p>
+<div id="synopsis" class="section level3">
+<h3>Synopsis</h3>
+<pre><code>AFL% eo_extent(...);</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Argument</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left"><code>...</code></td>
+<td align="left">Optional list of arrays</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="result" class="section level3">
+<h3>Result</h3>
+<p>A one-dimensional table-like array with rows for all given arrays and attributes (arrayname,setting,xmin,xmax,ymin,ymax,tmin,tmax,vmin,vmax) representing the geographical extent.</p>
+</div>
+<div id="details" class="section level3">
+<h3>Details</h3>
+<p>If no array is given as parameters, eo_extent considers all existing earth observation arrays (as in <code>eo_arrays()</code>).</p>
+</div>
+<div id="examples" class="section level3">
+<h3>Examples</h3>
+<ol style="list-style-type: decimal">
+<li>Create a spatial and a spatiotemporal array ``` store(build(<val:double>[lat=0:179,256,0,lon=0:359,256,0],double(random()) / double(2147483647)),world_s);<br />eo_setsrs(world_s,‘lon’,‘lat’,‘EPSG’,4326,‘x0=-180 y0=90 a11=1 a22=-1’);</li>
+</ol>
+<p>store(build(<val:double>[lat=0:179,256,0,lon=0:359,256,0,t=0:364,32,0],double(random()) / double(2147483647)),world_st); eo_cpsrs(world_s,world_st); eo_settrs(world_st,‘t’,‘2001-01-01’, ‘P1D’);</p>
+<pre><code>
+2. Extent for all arrays </code></pre>
+<p>eo_extent();</p>
+<pre><code>
+3. Extent one specific arrays</code></pre>
+<p>eo_extent(world_st); ```</p>
+<ol start="4" style="list-style-type: decimal">
+<li>Clean up remove(world_s); remove(world_st);</li>
+</ol>
+</div>
+<div id="notes" class="section level3">
+<h3>Notes</h3>
+<p>Vertical referencing is currently not implemented.</p>
+</div>
+<div id="authors" class="section level3">
+<h3>Author(s)</h3>
+<p>Marius Appel - <a href="mailto:marius.appel@uni-muenster.de">marius.appel@uni-muenster.de</a></p>
+</div>
+</div>
+</body>
+</html>

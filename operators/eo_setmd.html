@@ -1,0 +1,69 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+</head>
+<body>
+<div id="eo_setmd" class="section level2">
+<h2>eo_setmd()</h2>
+<p>Sets additional key value metadata for arrays and array attributes</p>
+<div id="synopsis" class="section level3">
+<h3>Synopsis</h3>
+<pre><code>AFL% eo_setmd(array, [attribute], keys, values);</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Argument</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left"><code>array</code></td>
+<td align="left">Existing array</td>
+</tr>
+<tr class="even">
+<td align="left"><code>attribute</code></td>
+<td align="left">Optional attribute name of provided array as string</td>
+</tr>
+<tr class="odd">
+<td align="left"><code>keys</code></td>
+<td align="left">Comma-separated list of metadata keys</td>
+</tr>
+<tr class="even">
+<td align="left"><code>values</code></td>
+<td align="left">Comma-separated list of metadata values</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="result" class="section level3">
+<h3>Result</h3>
+<p>This is a data definition operator and won’t return any results.</p>
+</div>
+<div id="details" class="section level3">
+<h3>Details</h3>
+<p>This operator can be used to set additional key value array and attribute metadata depending on whether three or four arguments are given. Length of <code>keys</code> and <code>values</code> arguments must match which sometimes leads to problems if data have metadata strings with commas.</p>
+</div>
+<div id="examples" class="section level3">
+<h3>Examples</h3>
+<ol style="list-style-type: decimal">
+<li>Create an array that covers the whole world with 1 degrees pixel size and one day temporal resolution starting at January 1st, 2015. ``` store(build(<val:double>[lat=0:179,256,0,lon=0:359,256,0],double(random()) / double(2147483647)),world);<br />eo_setsrs(world,‘lon’,‘lat’,‘EPSG’,4326,‘x0=-180 y0=90 a11=1 a22=-1’); eo_settrs(world,‘t’,‘2015-01-01’, ‘P1D’);</li>
+</ol>
+<p>eo_setmd(world,‘AREA_OR_POINT’,‘AREA’); eo_setmd(world,‘val’,‘NODATA,SCALE’, ‘-1,10000’); eo_getmd(world); remove(world); ```</p>
+</div>
+<div id="notes" class="section level3">
+<h3>Notes</h3>
+<p>See the <a href="http://www.gdal.org/gdal_datamodel.html">GDAL metadata model</a> for additional information.</p>
+</div>
+<div id="authors" class="section level3">
+<h3>Author(s)</h3>
+<p>Marius Appel - <a href="mailto:marius.appel@uni-muenster.de">marius.appel@uni-muenster.de</a></p>
+</div>
+</div>
+</body>
+</html>

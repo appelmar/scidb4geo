@@ -1,0 +1,83 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+</head>
+<body>
+<div id="eo_setsrs" class="section level2">
+<h2>eo_setsrs()</h2>
+<p>Sets the spatial reference of an existing array.</p>
+<div id="synopsis" class="section level3">
+<h3>Synopsis</h3>
+<pre><code>AFL% eo_setsrs(array_target, xdim, ydim, auth_name, auth_srid, A  );
+AFL% eo_setsrs(array_target, array_source );</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Argument</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left"><code>array_target</code></td>
+<td align="left">Existing array whose spatial reference will be set</td>
+</tr>
+<tr class="even">
+<td align="left"><code>array_source</code></td>
+<td align="left">Existing array from which the spatial reference will be copied to the target array</td>
+</tr>
+<tr class="odd">
+<td align="left"><code>xdim</code></td>
+<td align="left">Name of the longitude / easting dimension as a string</td>
+</tr>
+<tr class="even">
+<td align="left"><code>ydim</code></td>
+<td align="left">Name of the latitude / northing dimension as a string</td>
+</tr>
+<tr class="odd">
+<td align="left"><code>auth_name</code></td>
+<td align="left">String identifier of SRS authority, e.g. ‘EPSG’</td>
+</tr>
+<tr class="even">
+<td align="left"><code>auth_srid</code></td>
+<td align="left">Integer ID of the reference system according to an authority, e.g. 4326</td>
+</tr>
+<tr class="odd">
+<td align="left"><code>A</code></td>
+<td align="left">Affine transformation parameters as a string (see details below), e.g. ‘x0=-180 y0=90 a11=0.1 a22=-0.1’</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="result" class="section level3">
+<h3>Result</h3>
+<p>This is a data definition operator and won’t return any results.</p>
+</div>
+<div id="details" class="section level3">
+<h3>Details</h3>
+<p>The affine transformation A is used to relate image coordinates to referenced coordinates. Its string definition takes a space separated list of parameters x0,y0,a11,a12,a21,a22 with default values representing the identity transformation (0,0,1,0,0,1). Notice that the affine transformation is in line with the <a href="http://www.gdal.org/gdal_datamodel.html">GDAL data model</a>.</p>
+</div>
+<div id="examples" class="section level3">
+<h3>Examples</h3>
+<ol style="list-style-type: decimal">
+<li><p>Create an array that covers the whole world with 0.1 degrees pixel size</p>
+<pre><code>store(build(&lt;val:double&gt;[lat=0:1799,256,0,lon=0:3599,256,0],1),world);  
+eo_setsrs(world,'lon','lat','EPSG',4326,'x0=-180 y0=90 a11=0.1 a22=-0.1');</code></pre></li>
+</ol>
+</div>
+<div id="notes" class="section level3">
+<h3>Notes</h3>
+<p>The plugin comes with standard EPSG definitions. If the combination of authority name and id cannot be found internally, the plugin checks <a href="http://spatialreference.org">spatialreference.org</a> and automatically adds the system to the catalog if available. Otherwise, you may add proj4 and wkt definitions manually using <code>eo_regnewsrs()</code>.</p>
+</div>
+<div id="authors" class="section level3">
+<h3>Author(s)</h3>
+<p>Marius Appel - <a href="mailto:marius.appel@uni-muenster.de">marius.appel@uni-muenster.de</a></p>
+</div>
+</div>
+</body>
+</html>
